@@ -101,6 +101,8 @@ const Inbox: React.FC = () => {
   const [conversations, setConversations] = useState<InboxConversation[]>(MOCK_INBOX_CONVERSATIONS);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [messageInput, setMessageInput] = useState('');
+  const [isAiTyping, setIsAiTyping] = useState(false);
   
   // Multi-selection filter state
   const [filters, setFilters] = useState<FilterState>({
@@ -110,6 +112,73 @@ const Inbox: React.FC = () => {
   });
 
   const activeFilterCount = filters.source.length + filters.channel.length + filters.crm.length;
+
+  // Send message and get AI response
+  const handleSendMessage = async () => {
+    if (!messageInput.trim() || !selectedId) return;
+
+    const messageText = messageInput.trim();
+    setMessageInput('');
+
+    // Add agent message to conversation
+    const agentMessage = {
+      id: `msg-${Date.now()}`,
+      sender: 'agent' as const,
+      text: messageText,
+      timestamp: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+    };
+
+    setConversations(prevConversations =>
+      prevConversations.map(conv =>
+        conv.id === selectedId
+          ? { ...conv, messages: [...conv.messages, agentMessage] }
+          : conv
+      )
+    );
+
+    // Get AI response
+    setIsAiTyping(true);
+    try {
+      const selectedConv = conversations.find(c => c.id === selectedId);
+      const response = await fetch('/api/ai/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [...(selectedConv?.messages || []), agentMessage],
+          leadContext: selectedConv?.lead
+        })
+      });
+
+      const data = await response.json();
+
+      // Add AI response to conversation
+      const aiMessage = {
+        id: `msg-${Date.now()}-ai`,
+        sender: 'ai' as const,
+        text: data.response,
+        timestamp: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+      };
+
+      setConversations(prevConversations =>
+        prevConversations.map(conv =>
+          conv.id === selectedId
+            ? { ...conv, messages: [...conv.messages, aiMessage] }
+            : conv
+        )
+      );
+    } catch (error) {
+      console.error('Failed to get AI response:', error);
+    } finally {
+      setIsAiTyping(false);
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
 
   // Filter Logic: Category first, then Filters
   const categoryConversations = conversations.filter(c => c.category === activeCategory);
@@ -504,6 +573,27 @@ const Inbox: React.FC = () => {
                    </div>
                  );
                })}
+               
+               {/* AI Typing Indicator */}
+               {isAiTyping && (
+                 <div className="flex gap-3 justify-end">
+                   <div className="flex flex-col max-w-[70%] items-end">
+                     <div className="px-4 py-3 rounded-2xl bg-gradient-to-br from-purple-50 to-white border border-purple-100 rounded-tr-none">
+                       <div className="flex items-center gap-1.5 mb-1 text-[10px] font-bold text-purple-600 uppercase tracking-wider">
+                         <Bot className="w-3 h-3" /> AI Assistant
+                       </div>
+                       <div className="flex items-center gap-1">
+                         <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                         <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                         <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                       </div>
+                     </div>
+                   </div>
+                   <div className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-white bg-purple-600">
+                     <Bot className="w-4 h-4" />
+                   </div>
+                 </div>
+               )}
             </div>
 
             {/* Input Area */}
@@ -512,10 +602,20 @@ const Inbox: React.FC = () => {
                   <div className="flex items-end gap-2 bg-slate-50 border border-slate-200 rounded-xl p-2 focus-within:ring-2 focus-within:ring-cyan-500/20 focus-within:border-cyan-500 transition-all">
                      <textarea 
                        placeholder="Type a message..." 
+                       value={messageInput}
+                       onChange={(e) => setMessageInput(e.target.value)}
+                       onKeyPress={handleKeyPress}
                        className="flex-1 bg-transparent border-none focus:ring-0 text-sm resize-none max-h-32 py-2 px-2 placeholder-slate-400"
                        rows={1}
+                       disabled={isAiTyping}
                      />
-                     <button className="p-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors shadow-md shadow-cyan-500/20"><Send className="w-4 h-4" /></button>
+                     <button 
+                       onClick={handleSendMessage}
+                       disabled={!messageInput.trim() || isAiTyping}
+                       className="p-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors shadow-md shadow-cyan-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                     >
+                       <Send className="w-4 h-4" />
+                     </button>
                   </div>
                </div>
             </div>
