@@ -71,7 +71,20 @@ The platform integrates with the Alto CRM API for:
 - File notes and documents
 
 ## AI Features
-- Node description generation using OpenAI GPT-5
-- Flow completeness analysis
-- Workflow suggestions and improvements
+- **Flow Builder**: Node description generation using OpenAI GPT-5
+- **Flow Builder**: Flow completeness analysis
+- **Flow Builder**: Workflow suggestions and improvements
+- **Pipeline Progression**: Stage-specific AI analysis with contextual summaries
+- **Pipeline Progression**: Smart action suggestions with one-click task creation
+- **Pipeline Progression**: Priority-based recommendations (high/medium/low)
 - Tone customization (Friendly, Professional, Formal, Playful, Concise)
+
+### AI-Powered Progression Insights
+When users click on any stage card in the pipeline:
+1. AI analyzes the current stage, property, lead status, and context
+2. Provides a concise summary of what typically happens at this stage
+3. Suggests 2-3 prioritized actions the agent should take
+4. Offers one-click "Create Task" buttons for each suggested action
+5. Displays deal details and option to view full progression
+
+**Note**: For demo purposes, AI calls run client-side with `dangerouslyAllowBrowser` enabled. For production deployments, move AI functionality to a backend API to protect API keys.
