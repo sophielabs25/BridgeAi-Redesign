@@ -250,6 +250,71 @@ Generate exactly 8-12 improvements that are specific to this property type, loca
   }
 });
 
+app.post('/api/ai/generate-flow', async (req, res) => {
+  try {
+    const { requirement, category } = req.body;
+
+    const prompt = `You are an expert automation designer for real estate agencies. Create a complete workflow based on this requirement:
+
+Requirement: ${requirement}
+Category: ${category}
+
+Design an automation flow with nodes and edges. Include these node types:
+- trigger: Starting points (e.g., "New lead from Zoopla", "Viewing booked")
+- action: Actions to perform (e.g., "Send WhatsApp message", "Update CRM")
+- condition: Decision points (e.g., "Budget > £2000?", "Response received?")
+- ai_process: AI-powered steps (e.g., "Qualify lead", "Analyze feedback")
+- integration: CRM/Portal syncs (e.g., "Sync to Alto", "Get property details")
+
+Return ONLY valid JSON in this exact format:
+{
+  "flowName": "Brief flow name (5-7 words max)",
+  "description": "One sentence describing what this automation does",
+  "summary": "Bullet list of 3-4 key steps (• Step 1\\n• Step 2\\n• Step 3)",
+  "nodes": [
+    {
+      "id": "node-1",
+      "type": "trigger",
+      "label": "Node label",
+      "position": {"x": 100, "y": 100},
+      "data": {},
+      "config": {"tone": "Professional"}
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-1",
+      "source": "node-1",
+      "target": "node-2"
+    }
+  ]
+}
+
+Create 4-8 nodes in a logical vertical flow. Space nodes 180px apart vertically (y-axis). Center all nodes at x: 300.`;
+
+    const response = await openai.chat.completions.create({
+      model: 'gpt-5',
+      messages: [
+        {
+          role: 'system',
+          content: 'You are an automation flow designer. Return only valid JSON with no markdown formatting or code blocks.'
+        },
+        {
+          role: 'user',
+          content: prompt
+        }
+      ],
+      response_format: { type: "json_object" }
+    });
+
+    const result = JSON.parse(response.choices[0].message.content || '{}');
+    res.json(result);
+  } catch (error) {
+    console.error('OpenAI API Error:', error);
+    res.status(500).json({ error: 'Failed to generate flow' });
+  }
+});
+
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Backend server is running' });
 });

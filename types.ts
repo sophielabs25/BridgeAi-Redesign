@@ -8,7 +8,8 @@ export enum ViewState {
   TEMPLATE_PREVIEW = 'TEMPLATE_PREVIEW',
   PIPELINE = 'PIPELINE',
   PROPERTIES = 'PROPERTIES',
-  TASKS = 'TASKS'
+  TASKS = 'TASKS',
+  AI_FLOW_CREATOR = 'AI_FLOW_CREATOR'
 }
 
 export enum WorkflowCategory {

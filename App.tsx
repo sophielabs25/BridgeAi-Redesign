@@ -55,6 +55,7 @@ import Inbox from './components/Inbox';
 import Pipeline from './components/Pipeline';
 import Properties from './components/Properties';
 import Tasks from './components/Tasks';
+import AIFlowCreator from './components/AIFlowCreator';
 
 const App: React.FC = () => {
   const [viewState, setViewState] = useState<ViewState>(ViewState.DASHBOARD);
@@ -62,6 +63,8 @@ const App: React.FC = () => {
   const [aiTone, setAiTone] = useState<ToneType>(ToneType.PROFESSIONAL);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
+  const [generatedNodes, setGeneratedNodes] = useState<FlowNode[]>([]);
+  const [generatedEdges, setGeneratedEdges] = useState<FlowEdge[]>([]);
 
   const handleNavClick = (name: string) => {
     if (name === 'Chats') {
@@ -83,12 +86,18 @@ const App: React.FC = () => {
 
   const handleWorkflowCategorySelect = (category: WorkflowCategory) => {
     if (category === WorkflowCategory.CREATE_NEW) {
-       setViewState(ViewState.TEMPLATE_GALLERY);
+       setViewState(ViewState.AI_FLOW_CREATOR);
        setActiveCategory(WorkflowCategory.CREATE_NEW);
     } else {
        setActiveCategory(category);
        setViewState(ViewState.DASHBOARD);
     }
+  };
+
+  const handleFlowGenerated = (nodes: FlowNode[], edges: FlowEdge[]) => {
+    setGeneratedNodes(nodes);
+    setGeneratedEdges(edges);
+    setViewState(ViewState.FLOW_BUILDER);
   };
 
   const handleTemplateSelect = (template: Template) => {
@@ -184,20 +193,34 @@ const App: React.FC = () => {
           />
         );
 
+      case ViewState.AI_FLOW_CREATOR:
+        return (
+          <AIFlowCreator
+            category={activeCategory}
+            onBack={() => setViewState(ViewState.DASHBOARD)}
+            onFlowGenerated={handleFlowGenerated}
+          />
+        );
+
       case ViewState.FLOW_BUILDER:
         let nodes = INITIAL_NODES;
         let edges = INITIAL_EDGES;
 
-        switch (selectedTemplate?.id) {
-          case 'lr-1': nodes = LEAD_CAPTURE_NODES; edges = LEAD_CAPTURE_EDGES; break;
-          case 'lr-2': nodes = LEAD_QUALIFICATION_NODES; edges = LEAD_QUALIFICATION_EDGES; break;
-          case 'lr-3': nodes = FEEDBACK_NODES; edges = FEEDBACK_EDGES; break;
-          case 'lr-4': nodes = BOOKING_NODES; edges = BOOKING_EDGES; break;
-          case 'lr-5': nodes = SUGGESTIONS_NODES; edges = SUGGESTIONS_EDGES; break;
-          case 'lr-6': nodes = OFFERS_NODES; edges = OFFERS_EDGES; break;
-          case 'lr-7': nodes = REFERENCES_NODES; edges = REFERENCES_EDGES; break;
-          case 'lr-8': nodes = NOTIFICATIONS_NODES; edges = NOTIFICATIONS_EDGES; break;
-          case 'lr-9': nodes = ONBOARDING_NODES; edges = ONBOARDING_EDGES; break;
+        if (generatedNodes.length > 0) {
+          nodes = generatedNodes;
+          edges = generatedEdges;
+        } else {
+          switch (selectedTemplate?.id) {
+            case 'lr-1': nodes = LEAD_CAPTURE_NODES; edges = LEAD_CAPTURE_EDGES; break;
+            case 'lr-2': nodes = LEAD_QUALIFICATION_NODES; edges = LEAD_QUALIFICATION_EDGES; break;
+            case 'lr-3': nodes = FEEDBACK_NODES; edges = FEEDBACK_EDGES; break;
+            case 'lr-4': nodes = BOOKING_NODES; edges = BOOKING_EDGES; break;
+            case 'lr-5': nodes = SUGGESTIONS_NODES; edges = SUGGESTIONS_EDGES; break;
+            case 'lr-6': nodes = OFFERS_NODES; edges = OFFERS_EDGES; break;
+            case 'lr-7': nodes = REFERENCES_NODES; edges = REFERENCES_EDGES; break;
+            case 'lr-8': nodes = NOTIFICATIONS_NODES; edges = NOTIFICATIONS_EDGES; break;
+            case 'lr-9': nodes = ONBOARDING_NODES; edges = ONBOARDING_EDGES; break;
+          }
         }
 
         return (
@@ -215,7 +238,7 @@ const App: React.FC = () => {
         return (
           <Dashboard 
             category={activeCategory} 
-            onCreateNew={() => setViewState(ViewState.TEMPLATE_GALLERY)}
+            onCreateNew={() => setViewState(ViewState.AI_FLOW_CREATOR)}
             onSelectTemplate={handleTemplateSelect}
             onCategoryChange={handleWorkflowCategorySelect}
           />
