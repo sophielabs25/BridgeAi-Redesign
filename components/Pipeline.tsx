@@ -27,29 +27,44 @@ const ActionButton = ({ icon: Icon, label, onClick }: { icon: any, label: string
   </button>
 );
 
-const ProgressionDetailView: React.FC<{ data: ProgressionData; onBack: () => void }> = ({ data, onBack }) => {
-  const [activeTab, setActiveTab] = useState('Activity');
-  const [inputMode, setInputMode] = useState<'Note' | 'Email' | 'SMS'>('Note');
-  
-  // Task Drawer State
-  const [isTaskDrawerOpen, setIsTaskDrawerOpen] = useState(false);
+const ProgressionDetailView: React.FC<{ data: ProgressionData; onBack: () => void; stageName?: string }> = ({ data, onBack, stageName }) => {
+  const [activeTab, setActiveTab] = useState('Overview');
+  const [aiAnalysis, setAiAnalysis] = useState<{ summary: string; suggestedActions: any[] } | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [taskDrawerOpen, setTaskDrawerOpen] = useState(false);
   const [taskDraft, setTaskDraft] = useState<{ title: string; type: string } | null>(null);
 
-  const openCreateTask = (action?: SuggestedAction) => {
-      setTaskDraft(action ? { title: action.title, type: 'Task' } : { title: '', type: 'Task' });
-      setIsTaskDrawerOpen(true);
+  useEffect(() => {
+    const fetchAiInsights = async () => {
+      setIsAnalyzing(true);
+      const analysis = await analyzeProgressionStage(
+        stageName || 'Sales Progression',
+        data.address,
+        data.parties[0]?.name || 'Unknown',
+        'Active'
+      );
+      setAiAnalysis(analysis);
+      setIsAnalyzing(false);
+    };
+    
+    fetchAiInsights();
+  }, [data, stageName]);
+
+  const openCreateTask = (action?: any) => {
+    setTaskDraft(action ? { title: action.title, type: 'Task' } : { title: '', type: 'Task' });
+    setTaskDrawerOpen(true);
   };
 
   return (
-    <div className="flex flex-col h-full bg-[#f8fafc] animate-in fade-in slide-in-from-right-4 duration-300 relative">
+    <div className="fixed inset-y-0 right-0 w-[800px] bg-white shadow-2xl z-50 animate-in slide-in-from-right duration-300 flex flex-col">
       
       {/* Task Creation Drawer Overlay */}
-      {isTaskDrawerOpen && (
-         <div className="absolute inset-0 z-50 bg-slate-900/20 backdrop-blur-sm flex justify-end">
+      {taskDrawerOpen && (
+         <div className="absolute inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex justify-end">
              <div className="w-[400px] bg-white h-full shadow-2xl animate-in slide-in-from-right duration-300 flex flex-col">
                  {/* Drawer Header */}
                  <div className="h-24 bg-gradient-to-br from-indigo-600 to-purple-700 p-6 flex flex-col justify-center relative">
-                     <button onClick={() => setIsTaskDrawerOpen(false)} className="absolute top-4 right-4 text-white/60 hover:text-white">
+                     <button onClick={() => setTaskDrawerOpen(false)} className="absolute top-4 right-4 text-white/60 hover:text-white">
                          <X className="w-5 h-5" />
                      </button>
                      <div className="flex items-center gap-2 text-white/80 text-xs font-bold uppercase tracking-wider mb-1">
@@ -123,7 +138,7 @@ const ProgressionDetailView: React.FC<{ data: ProgressionData; onBack: () => voi
                          Created by <span className="font-bold text-slate-700">David Rose</span>
                      </div>
                      <button 
-                        onClick={() => setIsTaskDrawerOpen(false)}
+                        onClick={() => setTaskDrawerOpen(false)}
                         className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold shadow-lg shadow-blue-500/20 hover:bg-blue-700 transition-all"
                      >
                          Create Task
@@ -133,207 +148,222 @@ const ProgressionDetailView: React.FC<{ data: ProgressionData; onBack: () => voi
          </div>
       )}
 
-      {/* Header Bar */}
-      <div className="bg-white border-b border-slate-200 px-6 py-3 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-3">
-             <button onClick={onBack} className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500"><ArrowLeft className="w-4 h-4" /></button>
-             <div>
-                 <h1 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                     Dashboard <span className="text-slate-300">›</span> Properties <span className="text-slate-300">›</span> <span className="text-cyan-700">{data.address}</span>
-                 </h1>
-             </div>
-          </div>
+      {/* Header */}
+      <div className="h-40 bg-gradient-to-br from-purple-600 via-indigo-600 to-blue-600 p-6 flex flex-col justify-end relative shrink-0">
+        <button onClick={onBack} className="absolute top-4 right-4 text-white/80 hover:text-white transition-colors">
+          <X className="w-6 h-6" />
+        </button>
+        <div className="flex items-center gap-2 text-white/80 text-xs font-bold uppercase tracking-wider mb-2">
+          <FileText className="w-4 h-4" /> Full Progression
+        </div>
+        <h2 className="text-3xl font-bold text-white mb-1">{data.address.split(',')[0]}</h2>
+        <p className="text-white/80 text-sm">{data.address}</p>
+        <div className="flex items-center gap-3 mt-3">
+          <span className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-lg text-white text-sm font-bold">{data.price}</span>
+          <span className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-lg text-white text-sm font-bold">{stageName || 'In Progress'}</span>
+        </div>
       </div>
 
-      {/* Title Area */}
-      <div className="bg-white px-8 pt-6 pb-2">
-          <h2 className="text-2xl font-bold text-slate-900 mb-6">Sales Progression</h2>
-          
-          {/* Input Area */}
-          <div className="mb-6 bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden focus-within:ring-2 focus-within:ring-cyan-500/20 focus-within:border-cyan-500 transition-all">
-              <div className="flex border-b border-slate-100">
-                  <button onClick={() => setInputMode('Note')} className={`px-4 py-2 text-xs font-bold flex items-center gap-2 ${inputMode === 'Note' ? 'text-slate-900 bg-slate-50' : 'text-slate-500 hover:bg-slate-50'}`}><FileText className="w-3.5 h-3.5"/> Note</button>
-                  <button onClick={() => setInputMode('Email')} className={`px-4 py-2 text-xs font-bold flex items-center gap-2 ${inputMode === 'Email' ? 'text-slate-900 bg-slate-50' : 'text-slate-500 hover:bg-slate-50'}`}><Mail className="w-3.5 h-3.5"/> Email</button>
-                  <button onClick={() => setInputMode('SMS')} className={`px-4 py-2 text-xs font-bold flex items-center gap-2 ${inputMode === 'SMS' ? 'text-slate-900 bg-slate-50' : 'text-slate-500 hover:bg-slate-50'}`}><Smartphone className="w-3.5 h-3.5"/> SMS</button>
-                  <div className="ml-auto px-4 py-2">
-                      <button className="text-xs font-bold text-slate-500 flex items-center gap-1 hover:text-slate-800"><Zap className="w-3 h-3" /> Canvas</button>
-                  </div>
-              </div>
-              <div className="p-3">
-                  <textarea placeholder={`Click here to add a ${inputMode.toLowerCase()}...`} className="w-full text-sm resize-none outline-none h-12 placeholder:text-slate-400" />
-              </div>
-          </div>
-
-          {/* Tabs */}
-          <div className="flex items-center gap-6 border-b border-slate-200">
-               {['Activity', 'Notes', 'Messages', 'Calls', 'Emails', 'Events'].map(tab => (
-                   <button 
-                     key={tab}
-                     onClick={() => setActiveTab(tab)}
-                     className={`pb-3 text-sm font-medium transition-all border-b-2 px-1 ${activeTab === tab ? 'text-slate-900 border-slate-900 font-bold' : 'text-slate-500 border-transparent hover:text-slate-700'}`}
-                   >
-                       {tab}
-                   </button>
-               ))}
-          </div>
+      {/* Tabs */}
+      <div className="flex items-center gap-6 border-b border-slate-200 px-6 bg-white shrink-0">
+        {['Overview', 'AI Insights', 'Activity', 'Documents'].map(tab => (
+          <button 
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`pb-3 pt-4 text-sm font-medium transition-all border-b-2 px-1 ${
+              activeTab === tab ? 'text-slate-900 border-purple-600 font-bold' : 'text-slate-500 border-transparent hover:text-slate-700'
+            }`}
+          >
+            {tab}
+          </button>
+        ))}
       </div>
 
-      {/* Content Split View */}
-      <div className="flex-1 flex overflow-hidden px-6 py-6 gap-6">
-          
-          {/* Main Column */}
-          <div className="flex-1 flex flex-col min-w-0 overflow-y-auto custom-scrollbar pr-2">
-             
-             {/* Filter Row */}
-             <div className="flex items-center justify-between mb-4">
-                 <button className="flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-600 shadow-sm">
-                     <AlignLeft className="w-4 h-4" /> Everyone <ChevronDown className="w-3.5 h-3.5 ml-1 opacity-50" />
-                 </button>
-                 <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer">
-                     <input type="checkbox" className="rounded border-slate-300 text-cyan-600" />
-                     Hide Automated
-                 </label>
-             </div>
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50">
+        
+        {activeTab === 'Overview' && (
+          <>
+            {/* Progress Card */}
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+              <h3 className="font-bold text-slate-900 mb-4 flex items-center gap-2">
+                <CheckCircle className="w-5 h-5 text-green-500" /> Progression Status
+              </h3>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-slate-600">Overall Progress</span>
+                  <span className="text-sm font-bold text-slate-900">{data.progress}%</span>
+                </div>
+                <div className="w-full bg-slate-100 rounded-full h-2">
+                  <div className="bg-gradient-to-r from-purple-600 to-indigo-600 h-2 rounded-full transition-all" style={{ width: `${data.progress}%` }}></div>
+                </div>
+                <div className="grid grid-cols-2 gap-4 mt-4">
+                  <div className="bg-slate-50 p-3 rounded-lg">
+                    <div className="text-xs text-slate-500 mb-1">Target Exchange</div>
+                    <div className="font-bold text-slate-900">{data.targetExchangeDate}</div>
+                  </div>
+                  <div className="bg-slate-50 p-3 rounded-lg">
+                    <div className="text-xs text-slate-500 mb-1">Days Active</div>
+                    <div className="font-bold text-slate-900">12 days</div>
+                  </div>
+                </div>
+              </div>
+            </div>
 
-             {/* Sale Summary Card */}
-             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-6">
-                 <div className="p-4 border-b border-slate-100 bg-gradient-to-r from-purple-50 to-white flex items-center gap-2">
-                     <Sparkles className="w-4 h-4 text-purple-600" />
-                     <h3 className="font-bold text-slate-900 text-sm">Sale Summary</h3>
-                 </div>
-                 <div className="p-6">
-                     <p className="text-sm text-slate-700 leading-relaxed mb-6">
-                         {data.aiSummary}
-                     </p>
-                     
-                     <div className="space-y-3">
-                         <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Suggested Actions</h4>
-                         {data.suggestedActions.map(action => (
-                             <div key={action.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100 hover:border-purple-200 transition-colors group">
-                                 <div>
-                                     <div className="font-bold text-slate-800 text-sm mb-0.5">{action.title}</div>
-                                     <div className="text-xs text-slate-500">{action.description}</div>
-                                 </div>
-                                 <button 
-                                    onClick={() => openCreateTask(action)}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-purple-200 text-purple-700 rounded-lg text-xs font-bold shadow-sm hover:bg-purple-50 transition-colors opacity-0 group-hover:opacity-100"
-                                 >
-                                     <Sparkles className="w-3 h-3" /> Create Task
-                                 </button>
-                             </div>
-                         ))}
-                         {data.suggestedActions.length === 0 && (
-                             <div className="text-center py-4 text-slate-400 text-xs italic">No immediate actions suggested by AI.</div>
-                         )}
-                     </div>
-                 </div>
-             </div>
+            {/* Parties */}
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+              <h3 className="font-bold text-slate-900 mb-4 flex items-center gap-2">
+                <UserCircle className="w-5 h-5 text-blue-500" /> Parties Involved
+              </h3>
+              <div className="space-y-3">
+                {data.parties.map((party, idx) => (
+                  <div key={idx} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
+                    <div>
+                      <div className="font-bold text-slate-900 text-sm">{party.name}</div>
+                      <div className="text-xs text-slate-500">{party.role}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-xs text-slate-600">{party.email}</div>
+                      <div className="text-xs text-slate-600">{party.phone}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
 
-             {/* Timeline / Activity */}
-             <div className="space-y-6 pl-4 relative">
-                 <div className="absolute left-[19px] top-4 bottom-4 w-0.5 bg-slate-200"></div>
-                 
-                 {data.recentActivity.map(act => (
-                     <div key={act.id} className="relative flex gap-4">
-                         <div className={`w-10 h-10 rounded-full border-4 border-[#f8fafc] flex items-center justify-center shadow-sm z-10 shrink-0
-                             ${act.type === 'System' ? 'bg-slate-200 text-slate-500' : 
-                               act.type === 'Email' ? 'bg-blue-100 text-blue-600' : 
-                               'bg-amber-100 text-amber-600'}
-                         `}>
-                             {act.type === 'System' ? <Bot className="w-4 h-4" /> : <Mail className="w-4 h-4" />}
-                         </div>
-                         <div className="flex-1 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                             <div className="flex justify-between items-start mb-2">
-                                 <span className="font-bold text-slate-900 text-sm">{act.user || 'System'}</span>
-                                 <span className="text-xs text-slate-400">{act.date}</span>
-                             </div>
-                             <p className="text-sm text-slate-600 leading-relaxed">{act.text}</p>
-                         </div>
-                     </div>
-                 ))}
-             </div>
+        {activeTab === 'AI Insights' && (
+          <>
+            {/* AI Analysis Card */}
+            <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-2xl p-6 border border-purple-100">
+              <div className="flex items-center gap-2 mb-4">
+                <Bot className="w-6 h-6 text-purple-600" />
+                <h3 className="font-bold text-slate-900 text-lg">Stage Analysis</h3>
+              </div>
+              {isAnalyzing ? (
+                <div className="flex items-center gap-3 text-slate-500 py-8">
+                  <div className="w-6 h-6 border-2 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
+                  <span>Analyzing progression stage...</span>
+                </div>
+              ) : (
+                <p className="text-slate-700 leading-relaxed">
+                  {aiAnalysis?.summary || data.aiSummary || "No analysis available."}
+                </p>
+              )}
+            </div>
 
-          </div>
-
-          {/* Right Sidebar */}
-          <div className="w-80 shrink-0 space-y-6">
-              {/* Outstanding Tasks Widget */}
-              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                  <button className="flex items-center gap-2 text-xs font-bold text-slate-800 mb-4 w-full">
-                      <ChevronDown className="w-4 h-4" /> Outstanding Tasks
-                  </button>
-                  
-                  <div className="flex flex-col items-center justify-center py-4">
-                      <div className="w-20 h-20 rounded-full bg-emerald-50 flex items-center justify-center mb-3 relative">
-                          <div className="absolute inset-0 rounded-full border-4 border-emerald-100"></div>
-                          <div className="absolute inset-0 rounded-full border-4 border-emerald-500 border-t-transparent rotate-45"></div>
-                          <CheckSquare className="w-8 h-8 text-emerald-500" />
+            {/* AI Suggested Actions */}
+            {!isAnalyzing && aiAnalysis && aiAnalysis.suggestedActions.length > 0 && (
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                <h3 className="font-bold text-slate-900 mb-4 flex items-center gap-2">
+                  <Zap className="w-5 h-5 text-amber-500" /> AI Suggested Actions
+                </h3>
+                <div className="space-y-3">
+                  {aiAnalysis.suggestedActions.map((action: any, idx: number) => (
+                    <div key={idx} className="p-4 bg-slate-50 rounded-xl border border-slate-200 hover:border-purple-200 transition-all group">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1">
+                          <div className="font-bold text-slate-800 mb-1">{action.title}</div>
+                          <div className="text-sm text-slate-600">{action.description}</div>
+                        </div>
+                        <span className={`px-2 py-1 rounded text-xs font-bold ml-3 shrink-0 ${
+                          action.priority === 'high' ? 'bg-rose-100 text-rose-700' :
+                          action.priority === 'medium' ? 'bg-amber-100 text-amber-700' :
+                          'bg-slate-100 text-slate-600'
+                        }`}>
+                          {action.priority}
+                        </span>
                       </div>
-                      <div className="text-center">
-                          <div className="font-bold text-slate-900 text-sm">You're all caught up!</div>
-                          <div className="text-xs text-slate-500 mt-1">There are no outstanding tasks</div>
+                      <button 
+                        onClick={() => openCreateTask(action)}
+                        className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg text-sm font-bold shadow-lg shadow-purple-500/20 hover:shadow-purple-500/30 transition-all"
+                      >
+                        <CheckSquare className="w-4 h-4" /> Create Task
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Static Suggested Actions from Data */}
+            {data.suggestedActions.length > 0 && (
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                <h3 className="font-bold text-slate-900 mb-4">Recommended Next Steps</h3>
+                <div className="space-y-3">
+                  {data.suggestedActions.map(action => (
+                    <div key={action.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100 hover:border-purple-200 transition-colors group">
+                      <div>
+                        <div className="font-bold text-slate-800 text-sm mb-0.5">{action.title}</div>
+                        <div className="text-xs text-slate-500">{action.description}</div>
                       </div>
-                  </div>
-
-                  <div className="flex gap-2 mt-4">
-                      <button onClick={() => openCreateTask()} className="flex-1 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-50 flex items-center justify-center gap-1">
-                          <Plus className="w-3 h-3" /> Task
+                      <button 
+                        onClick={() => openCreateTask(action)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-purple-200 text-purple-700 rounded-lg text-xs font-bold shadow-sm hover:bg-purple-50 transition-colors opacity-0 group-hover:opacity-100"
+                      >
+                        <Sparkles className="w-3 h-3" /> Create Task
                       </button>
-                      <button className="flex-1 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-50 flex items-center justify-center gap-1">
-                          <Plus className="w-3 h-3" /> Follow Up
-                      </button>
-                  </div>
+                    </div>
+                  ))}
+                </div>
               </div>
+            )}
+          </>
+        )}
 
-              {/* Client App Engagement */}
-              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
-                  <button className="flex items-center gap-2 text-xs font-bold text-slate-800 mb-4 w-full">
-                      <ChevronDown className="w-4 h-4" /> Client App Engagement
-                  </button>
-
-                  <div className="space-y-4">
-                      {data.parties.filter(p => p.role === 'Buyer' || p.role === 'Seller').map(p => (
-                          <div key={p.role} className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                              <div className="flex justify-between items-center mb-2">
-                                  <div className="text-xs font-bold text-slate-900">{p.role === 'Buyer' ? 'Applicant' : 'Vendor'}</div>
-                              </div>
-                              <div className="flex items-center gap-2 mb-2">
-                                  <div className="font-medium text-slate-700 text-xs">{p.name}</div>
-                                  <span className="text-[9px] font-bold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded border border-amber-200">NOT LOGGED IN</span>
-                              </div>
-                              <div className="space-y-1">
-                                  <div className="flex items-center gap-2 text-[10px] text-slate-400">
-                                      <Smartphone className="w-3 h-3" /> Not logged in
-                                  </div>
-                                  <div className="flex items-center gap-2 text-[10px] text-slate-400">
-                                      <Globe className="w-3 h-3" /> Not logged in
-                                  </div>
-                              </div>
-                          </div>
-                      ))}
+        {activeTab === 'Activity' && (
+          <div className="space-y-4">
+            {data.recentActivity.map(act => (
+              <div key={act.id} className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+                <div className="flex items-start gap-3">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
+                    act.type === 'System' ? 'bg-slate-100 text-slate-600' : 
+                    act.type === 'Email' ? 'bg-blue-100 text-blue-600' : 
+                    'bg-amber-100 text-amber-600'
+                  }`}>
+                    {act.type === 'System' ? <Bot className="w-5 h-5" /> : <Mail className="w-5 h-5" />}
                   </div>
-                  
-                  <div className="mt-4 pt-4 border-t border-slate-50">
-                      <button className="w-full py-2 text-xs font-bold text-slate-500 flex items-center justify-between hover:text-slate-800">
-                          Send... <ChevronDown className="w-3 h-3" />
-                      </button>
+                  <div className="flex-1">
+                    <div className="flex justify-between items-start mb-1">
+                      <span className="font-bold text-slate-900">{act.user || 'System'}</span>
+                      <span className="text-xs text-slate-400">{act.date}</span>
+                    </div>
+                    <p className="text-sm text-slate-600 leading-relaxed">{act.text}</p>
                   </div>
+                </div>
               </div>
-
-              {/* Purchaser Next Steps */}
-              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                  <h4 className="text-xs font-bold text-slate-800 mb-4">Purchaser Next Steps</h4>
-                  <div className="space-y-3">
-                      {data.nextSteps.map((step, idx) => (
-                          <div key={idx} className="flex justify-between items-center text-xs">
-                              <span className="text-slate-700 font-medium">{step.label}</span>
-                              <span className="text-slate-400">{step.date}</span>
-                          </div>
-                      ))}
-                      {data.nextSteps.length === 0 && <div className="text-xs text-slate-400 italic">None pending</div>}
-                  </div>
-              </div>
+            ))}
           </div>
+        )}
+
+        {activeTab === 'Documents' && (
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+            <h3 className="font-bold text-slate-900 mb-4 flex items-center gap-2">
+              <FileText className="w-5 h-5 text-purple-600" /> Documents
+            </h3>
+            <div className="text-center py-8 text-slate-400">
+              <FileText className="w-12 h-12 mx-auto mb-2 opacity-50" />
+              <p>No documents uploaded yet</p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Footer Actions */}
+      <div className="p-6 border-t border-slate-200 bg-white shrink-0 space-y-3">
+        <button 
+          onClick={() => openCreateTask()}
+          className="w-full py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-bold shadow-lg shadow-purple-500/20 hover:shadow-purple-500/30 transition-all flex items-center justify-center gap-2"
+        >
+          <Plus className="w-5 h-5" /> Create Task
+        </button>
+        <button 
+          onClick={onBack}
+          className="w-full py-3 bg-white border-2 border-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-50 transition-all"
+        >
+          Close
+        </button>
       </div>
     </div>
   );
@@ -342,6 +372,7 @@ const ProgressionDetailView: React.FC<{ data: ProgressionData; onBack: () => voi
 const Pipeline: React.FC = () => {
   const [activeSubMenu, setActiveSubMenu] = useState('Lettings Progression');
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
+  const [selectedStageName, setSelectedStageName] = useState<string>('');
   const [aiInsightsCard, setAiInsightsCard] = useState<any>(null);
   const [aiAnalysis, setAiAnalysis] = useState<{ summary: string; suggestedActions: any[] } | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -357,6 +388,7 @@ const Pipeline: React.FC = () => {
   const handleCardClick = async (card: any, stageName: string) => {
     setAiInsightsCard(card);
     setIsAnalyzing(true);
+    setSelectedStageName(stageName);
     
     const analysis = await analyzeProgressionStage(
       stageName,
@@ -391,7 +423,7 @@ const Pipeline: React.FC = () => {
 
   // If a specific progression card is selected and we have data for it, show the detail view
   if (selectedProgression) {
-      return <ProgressionDetailView data={selectedProgression} onBack={() => setSelectedCardId(null)} />;
+      return <ProgressionDetailView data={selectedProgression} onBack={() => setSelectedCardId(null)} stageName={selectedStageName} />;
   }
 
   return (

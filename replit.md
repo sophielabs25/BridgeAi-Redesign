@@ -80,12 +80,28 @@ The platform integrates with the Alto CRM API for:
 - Tone customization (Friendly, Professional, Formal, Playful, Concise)
 
 ### AI-Powered Progression Insights
-When users click on any stage card in the pipeline:
+**Quick AI Insights Drawer**: When users click on any stage card in the pipeline:
 1. AI analyzes the current stage, property, lead status, and context
 2. Provides a concise summary of what typically happens at this stage
 3. Suggests 2-3 prioritized actions the agent should take
 4. Offers one-click "Create Task" buttons for each suggested action
-5. Displays deal details and option to view full progression
+5. Displays deal details and button to view full progression
+
+**Full Progression Detail View** (Right-Side Panel - 800px):
+Opens when clicking "View Full Progression" button, featuring:
+
+- **Beautiful gradient header** with property address, price, and stage
+- **4 Tabs**: Overview | AI Insights | Activity | Documents
+- **Overview Tab**: Progress bar, target exchange date, days active, all parties with contact details
+- **AI Insights Tab**: 
+  - Real-time AI stage analysis (powered by OpenAI)
+  - AI-generated suggested actions with priority levels (high/medium/low)
+  - One-click "Create Task" for each suggestion
+  - Both AI-generated and static recommended next steps
+- **Activity Tab**: Full timeline of progression activities, emails, notes
+- **Documents Tab**: Document management (future feature)
+- **Task Creation**: Nested 400px drawer for creating tasks from AI suggestions
+- **Smooth animations**: Slide-in from right with gradient styling
 
 ## Backend Architecture
 The application now uses a secure backend architecture to protect the OpenAI API key:
