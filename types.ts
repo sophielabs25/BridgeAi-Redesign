@@ -262,17 +262,26 @@ export interface Property {
     deposit: string;
     tenure: string;
     availability: string;
+    furnishing?: string; // Furnished, Part-furnished, Unfurnished
+    availableFrom?: string; // Move-in date
   };
   epcRating: string; // e.g. "B"
   media: {
     videoUrl?: string;
     virtualTourUrl?: string;
+    virtual3DTourUrl?: string;
     floorPlanUrl?: string;
     brochureUrl?: string;
+    photos?: string[];
   };
   location: {
     lat: number;
     lng: number;
+  };
+  commute?: {
+    station?: string;
+    duration?: string;
+    modes?: string[];
   };
 }
 
