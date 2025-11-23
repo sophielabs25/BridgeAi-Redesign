@@ -42,7 +42,9 @@ import {
   MoreHorizontal,
   Kanban,
   Building,
-  CheckSquare
+  CheckSquare,
+  PanelLeftClose,
+  Menu
 } from 'lucide-react';
 
 import Dashboard from './components/Dashboard';
@@ -223,14 +225,22 @@ const App: React.FC = () => {
 
   return (
     <div className="flex h-full w-full font-sans text-slate-900">
+      {/* Mobile Overlay */}
+      {isSidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-30 md:hidden"
+          onClick={() => setIsSidebarOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+      
       {/* Sidebar */}
       <aside className={`
         fixed inset-y-0 left-0 z-40 w-[260px] bg-white/80 backdrop-blur-xl border-r border-slate-200/60 transform transition-transform duration-300 ease-in-out flex flex-col
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-        md:relative md:translate-x-0
       `}>
         {/* Brand */}
-        <div className="h-18 flex items-center px-6 pt-6 pb-2">
+        <div className="h-18 flex items-center justify-between px-6 pt-6 pb-2">
           <div className="flex items-center gap-3 group cursor-pointer">
              <div className="w-9 h-9 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-cyan-500/30 shrink-0 transform group-hover:scale-105 transition-transform">
                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
@@ -245,6 +255,13 @@ const App: React.FC = () => {
                <span className="text-[10px] font-bold text-cyan-600 uppercase tracking-wider mt-1">Platform</span>
              </div>
           </div>
+          <button
+            onClick={() => setIsSidebarOpen(false)}
+            className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-all duration-200"
+            aria-label="Close sidebar"
+          >
+            <PanelLeftClose className="w-5 h-5" />
+          </button>
         </div>
 
         {/* Main Nav */}
@@ -304,6 +321,16 @@ const App: React.FC = () => {
         {/* Top Command Bar */}
         <header className="h-18 px-8 py-4 flex items-center justify-between z-20">
           <div className="flex items-center gap-2">
+            {/* Menu Toggle */}
+            {!isSidebarOpen && (
+              <button
+                onClick={() => setIsSidebarOpen(true)}
+                className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-all duration-200 mr-2"
+                aria-label="Open sidebar"
+              >
+                <Menu className="w-5 h-5" />
+              </button>
+            )}
              {/* Breadcrumbs */}
              <div className="flex items-center text-sm">
                <span className="text-slate-400 font-medium">BridgeAI</span>
