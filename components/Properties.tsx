@@ -1,6 +1,6 @@
 
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Property, PropertyFeedback, PropertyOffer, InboxConversation } from '../types';
 import { MOCK_PROPERTIES, MOCK_INBOX_CONVERSATIONS, MOCK_PROPERTY_FEEDBACK, MOCK_PROPERTY_OFFERS } from '../constants';
 import { Search, Filter, BedDouble, Bath, Maximize, Plus, MoreHorizontal, Zap, Globe, CheckCircle, AlertCircle, ArrowLeft, MessageSquare, Share2, Edit, Users, TrendingUp, Star, Clock, Calendar, Mail, Phone, MapPin, Video, FileText, Layers, Sun, Map as MapIcon, Key, X, Bot, Send, Lightbulb, Loader, AlertTriangle } from 'lucide-react';
@@ -258,7 +258,7 @@ const PropertyEditView: React.FC<{ property: Property; onBack: () => void; onSav
     );
 };
 
-const PropertyDetailsView: React.FC<{ property: Property; onBack: () => void; onEdit: () => void }> = ({ property, onBack, onEdit }) => {
+const PropertyDetailsView: React.FC<{ property: Property; onBack: () => void; onEdit: () => void; onPropertyUpdate: (updatedProperty: Property) => void }> = ({ property, onBack, onEdit, onPropertyUpdate }) => {
     const [activeTab, setActiveTab] = useState<'Overview' | 'Enquiries' | 'Offers' | 'Feedback' | 'AI Suggestions'>('Overview');
     
     // Sub-tabs for the "Overview" section (Content Management)
@@ -271,6 +271,21 @@ const PropertyDetailsView: React.FC<{ property: Property; onBack: () => void; on
     const [aiSuggestions, setAiSuggestions] = useState<any>(null);
     const [loadingSuggestions, setLoadingSuggestions] = useState(false);
     const [suggestionsLoaded, setSuggestionsLoaded] = useState(false);
+    const [acceptedSuggestions, setAcceptedSuggestions] = useState<Set<string>>(new Set());
+    const [declinedSuggestions, setDeclinedSuggestions] = useState<Set<string>>(new Set());
+    
+    // Ref to track current property ID to prevent async race conditions
+    const currentPropertyIdRef = useRef(property.id);
+
+    // Reset AI suggestions state when property changes
+    useEffect(() => {
+        currentPropertyIdRef.current = property.id;
+        setAiSuggestions(null);
+        setSuggestionsLoaded(false);
+        setAcceptedSuggestions(new Set());
+        setDeclinedSuggestions(new Set());
+        setLoadingSuggestions(false);
+    }, [property.id]);
 
     useEffect(() => {
       if (activeTab === 'AI Suggestions' && !suggestionsLoaded) {
@@ -279,23 +294,79 @@ const PropertyDetailsView: React.FC<{ property: Property; onBack: () => void; on
     }, [activeTab, suggestionsLoaded]);
 
     const loadAISuggestions = async () => {
+      const requestPropertyId = property.id;
       setLoadingSuggestions(true);
-      const result = await analyzePropertyData({
-        address: property.address,
-        price: property.price,
-        bedrooms: property.bedrooms,
-        bathrooms: property.bathrooms,
-        sqft: property.sqft,
-        description: property.description,
-        features: property.features,
-        portalStatus: property.portalStatus,
-        epcRating: property.epcRating,
-        media: property.media,
-        type: property.type
-      });
-      setAiSuggestions(result);
-      setLoadingSuggestions(false);
-      setSuggestionsLoaded(true);
+      
+      try {
+        const result = await analyzePropertyData({
+          address: property.address,
+          price: property.price,
+          bedrooms: property.bedrooms,
+          bathrooms: property.bathrooms,
+          sqft: property.sqft,
+          description: property.description,
+          features: property.features,
+          portalStatus: property.portalStatus,
+          epcRating: property.epcRating,
+          media: property.media,
+          type: property.type
+        });
+        
+        // Only update state if we're still viewing the same property
+        if (currentPropertyIdRef.current === requestPropertyId) {
+          setAiSuggestions(result);
+          setSuggestionsLoaded(true);
+        }
+      } catch (error) {
+        console.error('Failed to load AI suggestions:', error);
+      } finally {
+        // Only clear loading state if we're still on the same property
+        if (currentPropertyIdRef.current === requestPropertyId) {
+          setLoadingSuggestions(false);
+        }
+      }
+    };
+
+    const acceptSuggestion = (suggestionId: string, suggestionType: string, data?: any) => {
+        setAcceptedSuggestions(prev => new Set([...prev, suggestionId]));
+        
+        let updatedProperty = { ...property };
+        let wasUpdated = false;
+        
+        if (suggestionType === 'description' && aiSuggestions?.sellingSummary) {
+            updatedProperty.description = aiSuggestions.sellingSummary;
+            wasUpdated = true;
+        } else if (suggestionType === 'missingField' && data?.field) {
+            const fieldName = data.field.toLowerCase();
+            
+            if (fieldName.includes('video')) {
+                updatedProperty.media = { ...updatedProperty.media, videoUrl: 'pending' };
+                wasUpdated = true;
+            } else if (fieldName.includes('floor plan') || fieldName.includes('floorplan')) {
+                updatedProperty.media = { ...updatedProperty.media, floorPlanUrl: 'pending' };
+                wasUpdated = true;
+            } else if (fieldName.includes('virtual tour')) {
+                updatedProperty.media = { ...updatedProperty.media, virtualTourUrl: 'pending' };
+                wasUpdated = true;
+            } else if (fieldName.includes('description') && aiSuggestions?.sellingSummary) {
+                updatedProperty.description = aiSuggestions.sellingSummary;
+                wasUpdated = true;
+            } else if (fieldName.includes('photo') || fieldName.includes('image')) {
+                updatedProperty.media = { ...updatedProperty.media, photos: [...(updatedProperty.media?.photos || []), 'pending'] };
+                wasUpdated = true;
+            } else if (fieldName.includes('epc') || fieldName.includes('energy')) {
+                updatedProperty.epcRating = 'Pending';
+                wasUpdated = true;
+            }
+        }
+        
+        if (wasUpdated) {
+            onPropertyUpdate(updatedProperty);
+        }
+    };
+
+    const declineSuggestion = (suggestionId: string) => {
+        setDeclinedSuggestions(prev => new Set([...prev, suggestionId]));
     };
 
     const linkedEnquiries = MOCK_INBOX_CONVERSATIONS.filter(c => 
@@ -810,15 +881,31 @@ const PropertyDetailsView: React.FC<{ property: Property; onBack: () => void; on
                         ) : aiSuggestions ? (
                             <>
                                 {/* Marketing Hook */}
-                                {aiSuggestions.sellingSummary && (
+                                {aiSuggestions.sellingSummary && !acceptedSuggestions.has('description') && !declinedSuggestions.has('description') && (
                                     <div className="bg-gradient-to-r from-cyan-50 to-blue-50 p-6 rounded-xl border border-cyan-200">
-                                        <div className="flex items-start gap-3">
-                                            <Lightbulb className="w-5 h-5 text-cyan-600 shrink-0 mt-0.5" />
-                                            <div>
-                                                <h3 className="font-bold text-slate-900 mb-2">AI Marketing Hook</h3>
-                                                <p className="text-slate-700 text-sm leading-relaxed">{aiSuggestions.sellingSummary}</p>
+                                        <div className="flex items-start justify-between gap-4">
+                                            <div className="flex items-start gap-3 flex-1">
+                                                <Lightbulb className="w-5 h-5 text-cyan-600 shrink-0 mt-0.5" />
+                                                <div>
+                                                    <h3 className="font-bold text-slate-900 mb-2">AI Marketing Hook</h3>
+                                                    <p className="text-slate-700 text-sm leading-relaxed">{aiSuggestions.sellingSummary}</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex gap-2 shrink-0">
+                                                <button onClick={() => acceptSuggestion('description', 'description')} className="flex items-center gap-1 px-4 py-2 bg-emerald-600 text-white text-sm font-bold rounded-lg hover:bg-emerald-700 transition-colors shadow-sm">
+                                                    <CheckCircle className="w-4 h-4" /> Accept
+                                                </button>
+                                                <button onClick={() => declineSuggestion('description')} className="px-4 py-2 bg-white border border-slate-200 text-slate-600 text-sm font-bold rounded-lg hover:bg-slate-50 transition-colors">
+                                                    Decline
+                                                </button>
                                             </div>
                                         </div>
+                                    </div>
+                                )}
+                                {acceptedSuggestions.has('description') && (
+                                    <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-200 flex items-center gap-3">
+                                        <CheckCircle className="w-5 h-5 text-emerald-600" />
+                                        <p className="text-sm font-medium text-emerald-700">Marketing description has been updated successfully!</p>
                                     </div>
                                 )}
 
@@ -830,21 +917,44 @@ const PropertyDetailsView: React.FC<{ property: Property; onBack: () => void; on
                                             <h3 className="font-bold text-slate-900 text-lg">Missing Information</h3>
                                         </div>
                                         <div className="space-y-3">
-                                            {aiSuggestions.missingFields.map((field: any, idx: number) => (
-                                                <div key={idx} className="flex items-start gap-3 p-3 bg-amber-50 rounded-lg border border-amber-100">
-                                                    <div className={`text-[10px] font-bold px-2 py-1 rounded whitespace-nowrap
-                                                        ${field.importance === 'high' ? 'bg-rose-100 text-rose-700' :
-                                                          field.importance === 'medium' ? 'bg-amber-100 text-amber-700' :
-                                                          'bg-blue-100 text-blue-700'}
-                                                    `}>
-                                                        {field.importance?.toUpperCase() || 'INFO'}
+                                            {aiSuggestions.missingFields.map((field: any, idx: number) => {
+                                                const suggestionId = `missing-${idx}`;
+                                                const isAccepted = acceptedSuggestions.has(suggestionId);
+                                                const isDeclined = declinedSuggestions.has(suggestionId);
+                                                
+                                                if (isDeclined) return null;
+                                                
+                                                return (
+                                                    <div key={idx} className={`flex items-start gap-3 p-4 rounded-lg border transition-colors ${isAccepted ? 'bg-emerald-50 border-emerald-200' : 'bg-amber-50 border-amber-100'}`}>
+                                                        <div className={`text-[10px] font-bold px-2 py-1 rounded whitespace-nowrap
+                                                            ${field.importance === 'high' ? 'bg-rose-100 text-rose-700' :
+                                                              field.importance === 'medium' ? 'bg-amber-100 text-amber-700' :
+                                                              'bg-blue-100 text-blue-700'}
+                                                        `}>
+                                                            {field.importance?.toUpperCase() || 'INFO'}
+                                                        </div>
+                                                        <div className="flex-1">
+                                                            <div className="font-semibold text-slate-900 text-sm">{field.field}</div>
+                                                            <p className="text-slate-600 text-xs mt-1">{field.reason}</p>
+                                                            {isAccepted && (
+                                                                <div className="flex items-center gap-1 mt-2 text-emerald-600 text-xs font-bold">
+                                                                    <CheckCircle className="w-3 h-3" /> Marked for addition
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        {!isAccepted && (
+                                                            <div className="flex gap-2 shrink-0">
+                                                                <button onClick={() => acceptSuggestion(suggestionId, 'missingField', field)} className="flex items-center gap-1 px-3 py-1.5 bg-emerald-600 text-white text-xs font-bold rounded hover:bg-emerald-700 transition-colors">
+                                                                    <CheckCircle className="w-3 h-3" /> Accept
+                                                                </button>
+                                                                <button onClick={() => declineSuggestion(suggestionId)} className="px-3 py-1.5 bg-white border border-slate-200 text-slate-600 text-xs font-bold rounded hover:bg-slate-50 transition-colors">
+                                                                    Decline
+                                                                </button>
+                                                            </div>
+                                                        )}
                                                     </div>
-                                                    <div className="flex-1">
-                                                        <div className="font-semibold text-slate-900 text-sm">{field.field}</div>
-                                                        <p className="text-slate-600 text-xs mt-1">{field.reason}</p>
-                                                    </div>
-                                                </div>
-                                            ))}
+                                                );
+                                            })}
                                         </div>
                                     </div>
                                 )}
@@ -1020,7 +1130,10 @@ const Properties: React.FC = () => {
   }
 
   if (selectedProperty) {
-      return <PropertyDetailsView property={selectedProperty} onBack={() => setSelectedProperty(null)} onEdit={handleEditProperty} />;
+      return <PropertyDetailsView property={selectedProperty} onBack={() => setSelectedProperty(null)} onEdit={handleEditProperty} onPropertyUpdate={(updatedProperty) => {
+        setProperties(properties.map(p => p.id === updatedProperty.id ? updatedProperty : p));
+        setSelectedProperty(updatedProperty);
+      }} />;
   }
 
   return (
