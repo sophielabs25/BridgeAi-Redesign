@@ -37,6 +37,14 @@ BridgeAI is a Real Estate automation platform that provides workflow builders, p
 ```
 
 ## Recent Changes (November 23, 2025)
+- ✅ **AI-Powered Inbox**: Intelligent assistant for lead communication
+  - **AI Chat Integration**: AI responds to agent questions and messages in real-time
+  - **Context-Aware Responses**: AI understands lead details (name, budget, interested properties, status)
+  - **Natural Conversations**: Supports multi-turn conversations with conversation history
+  - **Typing Indicator**: Animated typing indicator while AI generates responses
+  - **Smart Assistant**: Helps agents with property information, UK regulations, viewing scheduling
+  - **Concise Answers**: AI keeps responses brief (2-3 sentences) unless details requested
+  - **Backend Endpoint**: `/api/ai/chat` powered by GPT-5 with lead context
 - ✅ **Contacts Module**: Comprehensive contact management system
   - **Multi-Tab Interface**: All Contacts, Landlords, Tenants, Buyers, Vendors, Applicants, Contractors, Suppliers, Leads
   - **Contact Types**: 8 different contact categories with type-specific fields
