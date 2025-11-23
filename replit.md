@@ -37,6 +37,16 @@ BridgeAI is a Real Estate automation platform that provides workflow builders, p
 ```
 
 ## Recent Changes (November 23, 2025)
+- ✅ **Mandatory Lead Workflow System**: Structured 8-stage process for all chat leads
+  - **8 Mandatory Stages**: Lead Capture → Qualification → Booking & Follow-ups → Property Suggestions → Referencing → Notifications → Feedback & Sentiment → Onboarding
+  - **Visual Progress Tracker**: Real-time progress bar and stage completion tracking
+  - **Stage-Specific Guidance**: Required actions and checklists for each stage
+  - **Sentiment Analysis**: Track positive/neutral/negative sentiment at every stage
+  - **Property Suggestions**: Manage up to 5 property suggestions per lead with feedback tracking
+  - **Notifications Management**: Track who, what, and when for all party notifications
+  - **Workflow Persistence**: All workflow progress automatically saved to localStorage
+  - **Tabbed Interface**: Switch between Workflow tracker and Lead Details in right panel
+  - **Expandable Stages**: Click any stage to see requirements, add notes, and complete
 - ✅ **AI-Powered Inbox**: Intelligent assistant for lead communication
   - **AI Chat Integration**: AI responds to agent questions and messages in real-time
   - **Context-Aware Responses**: AI understands lead details (name, budget, interested properties, status)
