@@ -9,6 +9,7 @@ export enum ViewState {
   PIPELINE = 'PIPELINE',
   PROPERTIES = 'PROPERTIES',
   TASKS = 'TASKS',
+  CONTACTS = 'CONTACTS',
   AI_FLOW_CREATOR = 'AI_FLOW_CREATOR'
 }
 
@@ -305,4 +306,53 @@ export interface PropertyOffer {
   date: string;
   status: 'Pending' | 'Accepted' | 'Declined' | 'Negotiating';
   conditions?: string;
+}
+
+// Contacts System
+export type ContactType = 'Landlord' | 'Tenant' | 'Buyer' | 'Vendor' | 'Applicant' | 'Contractor' | 'Supplier' | 'Lead';
+
+export interface Contact {
+  id: string;
+  type: ContactType;
+  name: string;
+  email: string;
+  phone: string;
+  status: 'Active' | 'Inactive' | 'Prospect';
+  createdDate: string;
+  tags: string[];
+  avatar?: string;
+  
+  // Address
+  address?: string;
+  city?: string;
+  postcode?: string;
+  
+  // Landlord specific
+  portfolioValue?: string;
+  propertyCount?: number;
+  paymentMethod?: string;
+  
+  // Tenant specific
+  leaseStart?: string;
+  leaseEnd?: string;
+  rentAmount?: string;
+  depositPaid?: string;
+  
+  // Buyer/Vendor specific
+  budget?: string;
+  preApproved?: boolean;
+  solicitor?: string;
+  
+  // Contractor specific
+  trade?: string;
+  hourlyRate?: string;
+  availability?: 'Available' | 'Busy' | 'Unavailable';
+  rating?: number;
+  
+  // General
+  notes?: string;
+  linkedProperties?: string[]; // Array of property IDs
+  assignedAgent?: string;
+  source?: LeadSource;
+  lastContact?: string;
 }

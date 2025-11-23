@@ -55,6 +55,7 @@ import Inbox from './components/Inbox';
 import Pipeline from './components/Pipeline';
 import Properties from './components/Properties';
 import Tasks from './components/Tasks';
+import Contacts from './components/Contacts';
 import AIFlowCreator from './components/AIFlowCreator';
 
 const App: React.FC = () => {
@@ -77,6 +78,8 @@ const App: React.FC = () => {
       setViewState(ViewState.PROPERTIES);
     } else if (name === 'Tasks') {
       setViewState(ViewState.TASKS);
+    } else if (name === 'Contacts') {
+      setViewState(ViewState.CONTACTS);
     } else if (name === 'Settings') {
        setViewState(ViewState.SETTINGS);
     } else {
@@ -122,6 +125,9 @@ const App: React.FC = () => {
 
       case ViewState.TASKS:
         return <Tasks />;
+
+      case ViewState.CONTACTS:
+        return <Contacts />;
 
       case ViewState.SETTINGS:
         return (
