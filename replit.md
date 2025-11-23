@@ -60,7 +60,12 @@ BridgeAI is a Real Estate automation platform that provides workflow builders, p
 - ✅ Configured for Replit environment (port 5000, HMR over WSS)
 - ✅ Added OpenAI integration for AI-powered workflow insights
 - ✅ Updated service layer to use OpenAI SDK
-- ✅ Configured deployment settings for autoscale
+- ✅ **Production Deployment Configuration**: Ready for deployment
+  - Autoscale deployment target for stateless web applications
+  - Production build creates optimized dist folder
+  - Production server serves API + static files on single port
+  - Environment-aware port configuration (dev: 3001, prod: 5000)
+  - No development scripts in production deployment
 
 ## Environment Variables
 - `OPENAI_API_KEY` (Secret) - Required for AI features
@@ -69,9 +74,14 @@ BridgeAI is a Real Estate automation platform that provides workflow builders, p
 The application runs on port 5000 with hot module replacement enabled.
 
 ### Commands
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
+- `npm run dev:all` - Start both backend (port 3001) and frontend (port 5000) in development mode
+- `npm run build` - Build frontend for production
+- `npm start` - Start production server (serves API + static files on port 5000)
 - `npm run preview` - Preview production build
+
+### Environment-Aware Configuration
+- **Development Mode**: Backend on port 3001, Vite dev server on port 5000 with proxy
+- **Production Mode**: Single server on port 5000 serving both API routes and static files from dist folder
 
 ## Features
 - **Flow Builder**: Visual drag-and-drop workflow builder with AI assistance
@@ -108,12 +118,17 @@ When users click on any stage card in the pipeline:
 5. Displays deal details and option to view full progression
 
 ## Backend Architecture
-The application now uses a secure backend architecture to protect the OpenAI API key:
+The application uses a secure backend architecture to protect the OpenAI API key:
 
-### Server Setup
+### Development Mode
 - **Express Backend** (Port 3001): Handles all OpenAI API calls
 - **Vite Frontend** (Port 5000): React application with proxy to backend
 - **Proxy Configuration**: All `/api/*` requests are proxied from frontend to backend
+
+### Production Mode
+- **Express Server** (Port 5000): Serves both API routes and static files from dist folder
+- **Static Files**: Built frontend assets served from dist directory
+- **API Routes**: All `/api/*` endpoints remain accessible
 
 ### API Endpoints
 - `POST /api/ai/generate-node-description` - Generate workflow node descriptions
