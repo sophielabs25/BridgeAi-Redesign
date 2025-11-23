@@ -104,7 +104,7 @@ export interface FlowData {
 }
 
 // Inbox System
-export type LeadSource = 'Rightmove' | 'Zoopla' | 'Website' | 'Email' | 'Phone' | 'Whatsapp';
+export type LeadSource = 'Rightmove' | 'Zoopla' | 'Website' | 'Email' | 'Phone' | 'Whatsapp' | 'System';
 
 export interface Message {
   id: string;

@@ -1,5 +1,6 @@
+
 import React, { useState } from 'react';
-import { PIPELINE_MENU, MOCK_LETTINGS_PIPELINE, MOCK_SALES_PIPELINE, MOCK_PROGRESSION_DATA } from '../constants';
+import { PIPELINE_MENU, GENERATED_PIPELINES_MAP, MOCK_PROGRESSION_DATA } from '../constants';
 import { ProgressionData, SuggestedAction } from '../types';
 import { Search, Filter, Plus, MoreHorizontal, Globe, Phone, Mail, Calendar, Zap, UserCircle, ArrowLeft, CheckCircle, Clock, FileText, Briefcase, Bot, MessageSquare, Sparkles, ChevronDown, Send, AlignLeft, CheckSquare, Smartphone, Link, Home, X } from 'lucide-react';
 
@@ -341,8 +342,8 @@ const Pipeline: React.FC = () => {
   const [activeSubMenu, setActiveSubMenu] = useState('Lettings Progression');
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
 
-  // Dynamic pipeline switching
-  const stages = activeSubMenu === 'Sales Progression' ? MOCK_SALES_PIPELINE : MOCK_LETTINGS_PIPELINE;
+  // Dynamic pipeline switching based on the map
+  const stages = GENERATED_PIPELINES_MAP[activeSubMenu] || [];
 
   // Mock selection of progression data if available
   const selectedProgression = selectedCardId ? MOCK_PROGRESSION_DATA[selectedCardId] : null;
@@ -480,9 +481,9 @@ const Pipeline: React.FC = () => {
                       <div className="flex flex-wrap gap-1.5 mb-3">
                         {card.tags.map(tag => (
                            <span key={tag} className={`text-[9px] font-bold px-1.5 py-0.5 rounded border 
-                              ${tag === 'Hot Lead' ? 'bg-rose-50 text-rose-600 border-rose-100' : 
+                              ${tag === 'Hot' ? 'bg-rose-50 text-rose-600 border-rose-100' : 
                                 tag === 'New' ? 'bg-blue-50 text-blue-600 border-blue-100' :
-                                tag === 'Negotiating' ? 'bg-amber-50 text-amber-600 border-amber-100' :
+                                tag === 'Warm' ? 'bg-amber-50 text-amber-600 border-amber-100' :
                                 'bg-slate-50 text-slate-500 border-slate-100'}
                            `}>
                               {tag}
@@ -501,7 +502,13 @@ const Pipeline: React.FC = () => {
                   ))}
                   
                   {/* Drop Zone / Empty State */}
-                  <div className="h-20 border-2 border-dashed border-slate-100 rounded-xl flex items-center justify-center text-slate-300 text-xs font-medium hover:bg-slate-50 hover:border-slate-200 transition-colors cursor-pointer">
+                  {stage.cards.length === 0 && (
+                      <div className="h-20 border-2 border-dashed border-slate-100 rounded-xl flex items-center justify-center text-slate-300 text-xs font-medium">
+                         Empty Stage
+                      </div>
+                  )}
+
+                  <div className="h-10 border-2 border-dashed border-slate-100 rounded-xl flex items-center justify-center text-slate-300 text-xs font-medium hover:bg-slate-50 hover:border-slate-200 transition-colors cursor-pointer opacity-50 hover:opacity-100">
                      <Plus className="w-4 h-4 mr-1" /> Add
                   </div>
                 </div>

@@ -1,156 +1,195 @@
-import { InboxConversation, ChatCategory, LeadSource } from './types';
+
+import { InboxConversation, ChatCategory, LeadSource, Message } from './types';
 import { MASTER_PROPERTIES } from './propertiesData';
 
-// Helper to pick random properties from the master list based on type
-const getRandomProperties = (count: number, type: 'Sales' | 'Lettings' | 'Any' = 'Any') => {
-    let pool = MASTER_PROPERTIES;
-    if (type !== 'Any') {
-        pool = MASTER_PROPERTIES.filter(p => p.type === type);
-    }
-    
-    // Shuffle and slice
-    const shuffled = [...pool].sort(() => 0.5 - Math.random());
-    return shuffled.slice(0, count);
-};
-
-// Helper to generate a random conversation
-const generateConversation = (
-  id: string, 
-  category: ChatCategory, 
-  name: string, 
-  status: 'New' | 'Qualifying' | 'Hot' | 'Warm' | 'Nurture' | 'Closed',
-  source: LeadSource,
-  propertyCount: number,
-  propType: 'Sales' | 'Lettings' | 'Any',
-  lastMsg: string,
-  time: string
-): InboxConversation => {
-  
-  const linkedProperties = getRandomProperties(propertyCount, propType);
-  
-  return {
-    id,
-    source,
-    crm: 'Reapit',
-    category,
-    lead: {
-      name,
-      email: `${name.toLowerCase().replace(' ', '.')}@example.com`,
-      phone: '07700 900' + Math.floor(100 + Math.random() * 900),
-      status,
-      budget: linkedProperties[0]?.price || 'TBD',
-      properties: linkedProperties.map((p, idx) => ({
+// Helper to get a property image/details
+const getProp = (index: number) => {
+    const p = MASTER_PROPERTIES[index % MASTER_PROPERTIES.length];
+    return {
         id: p.id,
         address: p.address,
         price: p.price,
         bedrooms: p.bedrooms,
         image: p.image,
-        status: idx === 0 ? 'Enquired' : 'Viewing Booked'
-      }))
-    },
-    messages: [
-      { id: 'm1', sender: 'user', text: lastMsg, timestamp: time }
-    ],
-    unreadCount: Math.random() > 0.7 ? 1 : 0,
-    lastActivity: time,
-    tags: [category]
-  };
+        status: 'Enquired' as const
+    };
+};
+
+// --- REALISTIC CONVERSATION GENERATOR ---
+
+const createChat = (
+    id: string,
+    category: ChatCategory,
+    name: string,
+    status: 'New' | 'Qualifying' | 'Hot' | 'Warm' | 'Nurture' | 'Closed',
+    source: LeadSource,
+    subject: string, // Used for pipeline title
+    messages: { sender: 'user' | 'agent' | 'ai' | 'system', text: string, time: string }[],
+    propertyIndex?: number
+): InboxConversation => {
+    
+    const leadProps = propertyIndex !== undefined ? [getProp(propertyIndex)] : [];
+
+    return {
+        id,
+        source,
+        crm: 'Reapit',
+        category,
+        lead: {
+            name,
+            email: `${name.toLowerCase().replace(' ', '.')}@example.com`,
+            phone: '07700 900' + Math.floor(100 + Math.random() * 900),
+            status,
+            budget: leadProps[0]?.price || 'N/A',
+            properties: leadProps
+        },
+        messages: messages.map((m, i) => ({ id: `m-${id}-${i}`, ...m, timestamp: m.time })),
+        unreadCount: messages[messages.length - 1].sender === 'user' ? 1 : 0,
+        lastActivity: messages[messages.length - 1].time,
+        tags: [category, status]
+    };
 };
 
 export const MOCK_CHATS_GENERATED: InboxConversation[] = [
-  // LETTINGS (10) - Linked to Lettings Properties
-  generateConversation('l1', ChatCategory.LETTINGS, 'Alice Chen', 'Hot', 'Rightmove', 1, 'Lettings', 'Is this still available?', '10:00 AM'),
-  generateConversation('l2', ChatCategory.LETTINGS, 'Tom Hardy', 'Qualifying', 'Zoopla', 1, 'Lettings', 'Do you accept pets?', '10:15 AM'),
-  generateConversation('l3', ChatCategory.LETTINGS, 'Emma Stone', 'New', 'Website', 2, 'Lettings', 'Can I book a viewing for both?', '10:30 AM'),
-  generateConversation('l4', ChatCategory.LETTINGS, 'James Bond', 'Warm', 'Email', 1, 'Lettings', 'What is the deposit amount?', '11:00 AM'),
-  generateConversation('l5', ChatCategory.LETTINGS, 'Sarah Connor', 'Nurture', 'Whatsapp', 1, 'Lettings', 'Ill let you know by Friday.', 'Yesterday'),
-  generateConversation('l6', ChatCategory.LETTINGS, 'Bruce Wayne', 'Hot', 'Phone', 2, 'Lettings', 'I want to secure the penthouse.', 'Yesterday'),
-  generateConversation('l7', ChatCategory.LETTINGS, 'Diana Prince', 'New', 'Rightmove', 1, 'Lettings', 'Is there parking?', '2 days ago'),
-  generateConversation('l8', ChatCategory.LETTINGS, 'Clark Kent', 'Qualifying', 'Zoopla', 1, 'Lettings', 'How close is the station?', '2 days ago'),
-  generateConversation('l9', ChatCategory.LETTINGS, 'Barry Allen', 'Hot', 'Website', 1, 'Lettings', 'I can move in immediately.', '3 days ago'),
-  generateConversation('l10', ChatCategory.LETTINGS, 'Hal Jordan', 'Closed', 'Email', 1, 'Lettings', 'Agreement signed.', '1 week ago'),
+    // ========================================================================
+    // 1. SALES (Offers, Viewings, Chains)
+    // ========================================================================
+    createChat('s1', ChatCategory.SALES, 'James Sterling', 'Hot', 'Rightmove', 'Offer on Romiley', [
+        { sender: 'user', text: 'Hi, we viewed 15 Sandybrook Close yesterday with David.', time: 'Yesterday 09:00 AM' },
+        { sender: 'agent', text: 'Hi James, glad you could make it. What did you think of the property?', time: 'Yesterday 09:15 AM' },
+        { sender: 'user', text: 'We loved it. We would like to put in an offer of £565,000.', time: 'Yesterday 10:30 AM' },
+        { sender: 'ai', text: 'Thank you James. I have logged your offer of £565,000. Are you in a chain?', time: 'Yesterday 10:31 AM' },
+        { sender: 'user', text: 'No chain, we are cash buyers.', time: 'Yesterday 10:35 AM' }
+    ], 7), // Linked to Prop 7 (Romiley)
 
-  // SALES (10) - Linked to Sales Properties
-  generateConversation('s1', ChatCategory.SALES, 'Tony Stark', 'Hot', 'Rightmove', 1, 'Sales', 'Cash buyer, ready to proceed.', '09:00 AM'),
-  generateConversation('s2', ChatCategory.SALES, 'Steve Rogers', 'Qualifying', 'Zoopla', 1, 'Sales', 'Are there local schools?', '09:30 AM'),
-  generateConversation('s3', ChatCategory.SALES, 'Natasha Romanoff', 'Warm', 'Website', 2, 'Sales', 'Would like to view these two.', '10:45 AM'),
-  generateConversation('s4', ChatCategory.SALES, 'Bruce Banner', 'New', 'Phone', 1, 'Sales', 'Is the price negotiable?', '11:20 AM'),
-  generateConversation('s5', ChatCategory.SALES, 'Clint Barton', 'Nurture', 'Email', 1, 'Sales', 'Waiting for my mortgage AIP.', 'Yesterday'),
-  generateConversation('s6', ChatCategory.SALES, 'Thor Odinson', 'Hot', 'Whatsapp', 1, 'Sales', 'Making an offer today.', 'Yesterday'),
-  generateConversation('s7', ChatCategory.SALES, 'Wanda Maximoff', 'Qualifying', 'Rightmove', 1, 'Sales', 'Is it freehold?', '2 days ago'),
-  generateConversation('s8', ChatCategory.SALES, 'Vision', 'New', 'Zoopla', 1, 'Sales', 'Requesting floorplan.', '2 days ago'),
-  generateConversation('s9', ChatCategory.SALES, 'Sam Wilson', 'Warm', 'Website', 1, 'Sales', 'Second viewing possible?', '3 days ago'),
-  generateConversation('s10', ChatCategory.SALES, 'Bucky Barnes', 'Closed', 'Phone', 1, 'Sales', 'Keys collected.', '1 week ago'),
+    createChat('s2', ChatCategory.SALES, 'Sarah Jenkins', 'Qualifying', 'Zoopla', 'Viewing Inquiry', [
+        { sender: 'user', text: 'Is the 3-bed on The Avenue still available?', time: '2 days ago' },
+        { sender: 'ai', text: 'Yes Sarah, it is currently on the market. Would you like to book a viewing?', time: '2 days ago' },
+        { sender: 'user', text: 'Yes please, do you have anything this Saturday?', time: 'Today 09:00 AM' }
+    ], 6), // Linked to Prop 6 (Balham)
 
-  // VALUATIONS (10) - Linked to Sales (Potential Vendors)
-  generateConversation('v1', ChatCategory.VALUATIONS, 'Peter Parker', 'Hot', 'Website', 1, 'Sales', 'Book valuation for Friday.', '08:00 AM'),
-  generateConversation('v2', ChatCategory.VALUATIONS, 'May Parker', 'Warm', 'Phone', 1, 'Sales', 'Just checking if you cover Queens.', '08:30 AM'),
-  generateConversation('v3', ChatCategory.VALUATIONS, 'Harry Osborn', 'Qualifying', 'Email', 1, 'Sales', 'Thinking of selling.', '09:00 AM'),
-  generateConversation('v4', ChatCategory.VALUATIONS, 'Norman Osborn', 'New', 'Website', 1, 'Sales', 'What are your fees?', '10:00 AM'),
-  generateConversation('v5', ChatCategory.VALUATIONS, 'Mary Jane', 'Nurture', 'Whatsapp', 1, 'Sales', 'Call me next month.', 'Yesterday'),
-  generateConversation('v6', ChatCategory.VALUATIONS, 'Gwen Stacy', 'Hot', 'Rightmove', 1, 'Sales', 'Ready to put it on market.', 'Yesterday'),
-  generateConversation('v7', ChatCategory.VALUATIONS, 'Miles Morales', 'Qualifying', 'Zoopla', 1, 'Sales', 'Do you do virtual valuations?', '2 days ago'),
-  generateConversation('v8', ChatCategory.VALUATIONS, 'Aaron Davis', 'New', 'Phone', 1, 'Sales', 'Market appraisal needed.', '2 days ago'),
-  generateConversation('v9', ChatCategory.VALUATIONS, 'Rio Morales', 'Warm', 'Email', 1, 'Sales', 'Sending photos shortly.', '3 days ago'),
-  generateConversation('v10', ChatCategory.VALUATIONS, 'Jefferson Davis', 'Closed', 'Website', 1, 'Sales', 'Thanks for the report.', '1 week ago'),
+    createChat('s3', ChatCategory.SALES, 'Michael Chang', 'Warm', 'Website', 'Second Viewing', [
+        { sender: 'user', text: 'Hi, can we arrange a second viewing for the Shard apartment? My wife wants to see the kitchen lighting.', time: 'Today 11:00 AM' },
+        { sender: 'agent', text: 'Of course Michael. I can do tomorrow at 12?', time: 'Today 11:15 AM' }
+    ], 0), // Linked to Prop 0 (Shard)
 
-  // COMPLIANCE (10) - Linked to Lettings
-  generateConversation('c1', ChatCategory.COMPLIANCE, 'Landlord John', 'Hot', 'Email', 1, 'Lettings', 'Gas cert is expiring.', '12:00 PM'),
-  generateConversation('c2', ChatCategory.COMPLIANCE, 'Landlord Sarah', 'Qualifying', 'Phone', 1, 'Lettings', 'Do I need EICR?', '12:30 PM'),
-  generateConversation('c3', ChatCategory.COMPLIANCE, 'Tenant Mike', 'New', 'Website', 1, 'Lettings', 'Where is my deposit protection cert?', '01:00 PM'),
-  generateConversation('c4', ChatCategory.COMPLIANCE, 'Landlord Bill', 'Warm', 'Whatsapp', 1, 'Lettings', 'License renewal due.', '02:00 PM'),
-  generateConversation('c5', ChatCategory.COMPLIANCE, 'Contractor Dave', 'Nurture', 'Email', 1, 'Lettings', 'Sent the updated EPC.', 'Yesterday'),
-  generateConversation('c6', ChatCategory.COMPLIANCE, 'Council Rep', 'Hot', 'Phone', 1, 'Lettings', 'HMO Inspection required.', 'Yesterday'),
-  generateConversation('c7', ChatCategory.COMPLIANCE, 'Landlord Jen', 'Qualifying', 'Rightmove', 1, 'Lettings', 'Is the smoke alarm compliant?', '2 days ago'),
-  generateConversation('c8', ChatCategory.COMPLIANCE, 'Tenant Tom', 'New', 'Zoopla', 1, 'Lettings', 'Right to rent check.', '2 days ago'),
-  generateConversation('c9', ChatCategory.COMPLIANCE, 'Compliance Officer', 'Warm', 'Website', 1, 'Lettings', 'Audit passed.', '3 days ago'),
-  generateConversation('c10', ChatCategory.COMPLIANCE, 'Landlord Bob', 'Closed', 'Email', 1, 'Lettings', 'All docs uploaded.', '1 week ago'),
+    createChat('s4', ChatCategory.SALES, 'Eleanor Rigby', 'Nurture', 'Email', 'Market Update', [
+        { sender: 'user', text: 'Just checking if the price has dropped on Church Lane yet?', time: '3 days ago' },
+        { sender: 'agent', text: 'Hi Eleanor, not yet, but the vendor is open to sensible offers.', time: '3 days ago' },
+        { sender: 'user', text: 'Okay, let me know if it dips below £325k.', time: 'Yesterday' }
+    ], 8),
 
-  // MAINTENANCE (10) - Linked to Lettings
-  generateConversation('m1', ChatCategory.MAINTENANCE, 'Tenant Alice', 'Hot', 'Website', 1, 'Lettings', 'Boiler is not working.', '08:15 AM'),
-  generateConversation('m2', ChatCategory.MAINTENANCE, 'Tenant Bob', 'Qualifying', 'Phone', 1, 'Lettings', 'Leak under the sink.', '09:45 AM'),
-  generateConversation('m3', ChatCategory.MAINTENANCE, 'Landlord Charlie', 'New', 'Email', 1, 'Lettings', 'Quote for roof repair?', '11:00 AM'),
-  generateConversation('m4', ChatCategory.MAINTENANCE, 'Contractor Steve', 'Warm', 'Whatsapp', 1, 'Lettings', 'Can attend tomorrow.', '12:00 PM'),
-  generateConversation('m5', ChatCategory.MAINTENANCE, 'Tenant Eve', 'Nurture', 'Rightmove', 1, 'Lettings', 'Window handle loose.', 'Yesterday'),
-  generateConversation('m6', ChatCategory.MAINTENANCE, 'Tenant Frank', 'Hot', 'Zoopla', 1, 'Lettings', 'No hot water.', 'Yesterday'),
-  generateConversation('m7', ChatCategory.MAINTENANCE, 'Landlord Grace', 'Qualifying', 'Website', 1, 'Lettings', 'Approved the plumbing quote.', '2 days ago'),
-  generateConversation('m8', ChatCategory.MAINTENANCE, 'Tenant Heidi', 'New', 'Phone', 1, 'Lettings', 'Lock is jamming.', '2 days ago'),
-  generateConversation('m9', ChatCategory.MAINTENANCE, 'Contractor Ivan', 'Warm', 'Email', 1, 'Lettings', 'Job completed.', '3 days ago'),
-  generateConversation('m10', ChatCategory.MAINTENANCE, 'Tenant Judy', 'Closed', 'Whatsapp', 1, 'Lettings', 'Thanks for fixing it.', '1 week ago'),
+    createChat('s5', ChatCategory.SALES, 'Dr. Strange', 'Closed', 'Phone', 'Completion', [
+        { sender: 'user', text: 'Have the funds cleared?', time: '1 week ago' },
+        { sender: 'agent', text: 'Yes, completion has taken place. You can collect keys!', time: '1 week ago' }
+    ], 9),
 
-  // INSPECTIONS (10) - Linked to Lettings
-  generateConversation('i1', ChatCategory.INSPECTIONS, 'Clerk Anna', 'Hot', 'Email', 1, 'Lettings', 'Inventory check-in report attached.', '09:00 AM'),
-  generateConversation('i2', ChatCategory.INSPECTIONS, 'Tenant Paul', 'Qualifying', 'Phone', 1, 'Lettings', 'Disputing the carpet stain.', '10:30 AM'),
-  generateConversation('i3', ChatCategory.INSPECTIONS, 'Landlord Mark', 'New', 'Website', 1, 'Lettings', 'When is the mid-term inspection?', '11:45 AM'),
-  generateConversation('i4', ChatCategory.INSPECTIONS, 'Clerk Dave', 'Warm', 'Whatsapp', 1, 'Lettings', 'Keys collected for check-out.', '01:00 PM'),
-  generateConversation('i5', ChatCategory.INSPECTIONS, 'Tenant Lucy', 'Nurture', 'Rightmove', 1, 'Lettings', 'Can we reschedule inspection?', 'Yesterday'),
-  generateConversation('i6', ChatCategory.INSPECTIONS, 'Landlord Pete', 'Hot', 'Zoopla', 1, 'Lettings', 'Send me the photos.', 'Yesterday'),
-  generateConversation('i7', ChatCategory.INSPECTIONS, 'Clerk Sarah', 'Qualifying', 'Website', 1, 'Lettings', 'Report generated.', '2 days ago'),
-  generateConversation('i8', ChatCategory.INSPECTIONS, 'Tenant John', 'New', 'Phone', 1, 'Lettings', 'Do I need to be present?', '2 days ago'),
-  generateConversation('i9', ChatCategory.INSPECTIONS, 'Landlord Kate', 'Warm', 'Email', 1, 'Lettings', 'Looks good.', '3 days ago'),
-  generateConversation('i10', ChatCategory.INSPECTIONS, 'Tenant Mary', 'Closed', 'Whatsapp', 1, 'Lettings', 'Deposit return confirmed.', '1 week ago'),
+    // ========================================================================
+    // 2. LETTINGS (Deposits, Pets, Move-in)
+    // ========================================================================
+    createChat('l1', ChatCategory.LETTINGS, 'Alice Wonderland', 'New', 'Rightmove', 'Pet Enquiry', [
+        { sender: 'user', text: 'Hi, I saw the flat in Camden. Is it pet friendly? I have a small pug.', time: '10:00 AM' },
+        { sender: 'ai', text: 'Hi Alice. The landlord usually accepts pets with a slightly higher deposit. Shall I register your interest?', time: '10:01 AM' }
+    ], 1), // Camden
 
-  // MARKETING (10) - Linked to Sales/Lettings
-  generateConversation('mk1', ChatCategory.MARKETING, 'Vendor Sam', 'Hot', 'Email', 1, 'Sales', 'Approve the brochure.', '09:15 AM'),
-  generateConversation('mk2', ChatCategory.MARKETING, 'Vendor Lisa', 'Qualifying', 'Phone', 1, 'Sales', 'Change the main photo.', '10:00 AM'),
-  generateConversation('mk3', ChatCategory.MARKETING, 'Photographer', 'New', 'Website', 1, 'Sales', 'Photos ready for download.', '11:00 AM'),
-  generateConversation('mk4', ChatCategory.MARKETING, 'Vendor Tom', 'Warm', 'Whatsapp', 1, 'Sales', 'When does it go live?', '12:00 PM'),
-  generateConversation('mk5', ChatCategory.MARKETING, 'Portal Support', 'Nurture', 'Rightmove', 1, 'Sales', 'Listing updated.', 'Yesterday'),
-  generateConversation('mk6', ChatCategory.MARKETING, 'Vendor Jane', 'Hot', 'Zoopla', 1, 'Sales', 'Reduce price on Rightmove.', 'Yesterday'),
-  generateConversation('mk7', ChatCategory.MARKETING, 'Sign Guy', 'Qualifying', 'Website', 1, 'Sales', 'Board erected.', '2 days ago'),
-  generateConversation('mk8', ChatCategory.MARKETING, 'Vendor Mike', 'New', 'Phone', 1, 'Sales', 'Is the virtual tour working?', '2 days ago'),
-  generateConversation('mk9', ChatCategory.MARKETING, 'Social Media', 'Warm', 'Email', 1, 'Sales', 'Instagram post scheduled.', '3 days ago'),
-  generateConversation('mk10', ChatCategory.MARKETING, 'Vendor Sue', 'Closed', 'Whatsapp', 1, 'Sales', 'Looks great thanks.', '1 week ago'),
+    createChat('l2', ChatCategory.LETTINGS, 'Bob Builder', 'Qualifying', 'Phone', 'Move in Date', [
+        { sender: 'user', text: 'Ideally need to move by the 1st of next month.', time: 'Yesterday' },
+        { sender: 'agent', text: 'That might be tight for referencing, Bob. Can you do the 5th?', time: 'Today 09:30 AM' },
+        { sender: 'user', text: 'I can make the 5th work if we sign today.', time: 'Today 09:45 AM' }
+    ], 2), // Brixton
 
-  // GENERAL (10) - No Properties
-  generateConversation('g1', ChatCategory.GENERAL, 'Candidate Joe', 'Hot', 'Email', 0, 'Any', 'Job application for negotiator.', '09:00 AM'),
-  generateConversation('g2', ChatCategory.GENERAL, 'Supplier Cleaning', 'Qualifying', 'Phone', 0, 'Any', 'Invoice #1234 overdue.', '10:00 AM'),
-  generateConversation('g3', ChatCategory.GENERAL, 'Partner Agency', 'New', 'Website', 0, 'Any', 'Referral agreement.', '11:00 AM'),
-  generateConversation('g4', ChatCategory.GENERAL, 'IT Support', 'Warm', 'Whatsapp', 0, 'Any', 'Server maintenance scheduled.', '12:00 PM'),
-  generateConversation('g5', ChatCategory.GENERAL, 'Office Manager', 'Nurture', 'Rightmove', 0, 'Any', 'Stationery order.', 'Yesterday'),
-  generateConversation('g6', ChatCategory.GENERAL, 'Candidate Sarah', 'Hot', 'Zoopla', 0, 'Any', 'Interview confirmation.', 'Yesterday'),
-  generateConversation('g7', ChatCategory.GENERAL, 'Local Council', 'Qualifying', 'Website', 0, 'Any', 'Parking permit query.', '2 days ago'),
-  generateConversation('g8', ChatCategory.GENERAL, 'Utility Co', 'New', 'Phone', 0, 'Any', 'Account setup.', '2 days ago'),
-  generateConversation('g9', ChatCategory.GENERAL, 'Recruiter', 'Warm', 'Email', 0, 'Any', 'New CVs attached.', '3 days ago'),
-  generateConversation('g10', ChatCategory.GENERAL, 'Cleaner', 'Closed', 'Whatsapp', 0, 'Any', 'Office cleaned.', '1 week ago'),
+    createChat('l3', ChatCategory.LETTINGS, 'Charlie Bucket', 'Hot', 'Website', 'Holding Deposit', [
+        { sender: 'user', text: 'Paid the holding deposit for the Penthouse.', time: '2 hours ago' },
+        { sender: 'system', text: 'Payment of £500 received.', time: '2 hours ago' },
+        { sender: 'agent', text: 'Thanks Charlie, I have taken it off the market.', time: '1 hour ago' }
+    ], 3), // Penthouse
+
+    createChat('l4', ChatCategory.LETTINGS, 'Dora Explorer', 'Closed', 'Email', 'Key Collection', [
+        { sender: 'user', text: 'What time does the office close? I am coming for keys.', time: 'Yesterday' }
+    ], 4),
+
+    // ========================================================================
+    // 3. VALUATIONS (Market Appraisals)
+    // ========================================================================
+    createChat('v1', ChatCategory.VALUATIONS, 'Rupert Giles', 'New', 'Website', 'Valuation Request', [
+        { sender: 'user', text: 'Thinking of selling my 3-bed semi in Marple. Do you do free valuations?', time: '08:00 AM' },
+        { sender: 'ai', text: 'Good morning Rupert. Yes, we offer free market appraisals. When would be a good time for an agent to visit?', time: '08:01 AM' },
+        { sender: 'user', text: 'Thursday afternoon please.', time: '08:15 AM' }
+    ], undefined),
+
+    createChat('v2', ChatCategory.VALUATIONS, 'Tony Soprano', 'Hot', 'Phone', 'Instruction', [
+        { sender: 'agent', text: 'Hi Tony, based on the comps, we suggest listing at £850k.', time: 'Yesterday' },
+        { sender: 'user', text: 'Go ahead. Send over the contract.', time: 'Today 10:00 AM' }
+    ], 10),
+
+    createChat('v3', ChatCategory.VALUATIONS, 'Walter White', 'Nurture', 'Email', 'Price Update', [
+        { sender: 'user', text: 'Not ready to sell yet, maybe next spring.', time: 'Last Week' },
+        { sender: 'agent', text: 'Understood Walter. I will keep you updated on local sales prices in the meantime.', time: 'Last Week' }
+    ], undefined),
+
+    // ========================================================================
+    // 4. MAINTENANCE (Leaks, Heating, Electrical)
+    // ========================================================================
+    createChat('m1', ChatCategory.MAINTENANCE, 'Tenant: John Wick', 'Hot', 'Whatsapp', 'Urgent Leak', [
+        { sender: 'user', text: 'URGENT: Water pouring through the ceiling in the kitchen!', time: '10 mins ago' },
+        { sender: 'ai', text: 'I have flagged this as an EMERGENCY. Are you able to turn off the stopcock?', time: '9 mins ago' },
+        { sender: 'user', text: 'Yes, done. But it is a mess.', time: '8 mins ago' },
+        { sender: 'agent', text: 'John, I have an emergency plumber (Pimlico Plumbers) on their way. ETA 45 mins.', time: '2 mins ago' }
+    ], 1), // Shard
+
+    createChat('m2', ChatCategory.MAINTENANCE, 'Landlord: Bruce Wayne', 'Qualifying', 'Email', 'Boiler Quote', [
+        { sender: 'system', text: 'Quote received from Gotham Heating: £1,200 + VAT for new boiler.', time: 'Yesterday' },
+        { sender: 'agent', text: 'Bruce, the old boiler is condemned. Do you approve the replacement quote?', time: 'Yesterday' },
+        { sender: 'user', text: 'That seems expensive. Can we get a second opinion?', time: 'Today 09:00 AM' }
+    ], 2),
+
+    createChat('m3', ChatCategory.MAINTENANCE, 'Tenant: Peter Parker', 'New', 'Website', 'Window Handle', [
+        { sender: 'user', text: 'The handle on the bedroom window is loose.', time: '2 hours ago' },
+        { sender: 'ai', text: 'Thanks Peter. Could you upload a photo of the handle so we can send the right contractor?', time: '2 hours ago' },
+        { sender: 'user', text: '[Image Uploaded]', time: '1 hour ago' }
+    ], 10),
+
+    // ========================================================================
+    // 5. COMPLIANCE (GSC, EICR, EPC)
+    // ========================================================================
+    createChat('c1', ChatCategory.COMPLIANCE, 'Landlord: Clark Kent', 'Hot', 'System', 'GSC Expiring', [
+        { sender: 'system', text: 'ALERT: Gas Safety Certificate for 5 Garden Row expires in 7 days.', time: 'Yesterday' },
+        { sender: 'agent', text: 'Clark, shall I book the engineer for this week?', time: 'Yesterday' },
+        { sender: 'user', text: 'Yes please, go ahead.', time: 'Today 11:00 AM' }
+    ], 2),
+
+    createChat('c2', ChatCategory.COMPLIANCE, 'Landlord: Diana Prince', 'Qualifying', 'Email', 'EICR Failure', [
+        { sender: 'agent', text: 'Hi Diana, the EICR came back "Unsatisfactory". Remedial work quoted at £450.', time: '2 days ago' },
+        { sender: 'user', text: 'Is this mandatory?', time: 'Yesterday' },
+        { sender: 'agent', text: 'Yes, it is a legal requirement for the tenancy.', time: 'Today 08:30 AM' }
+    ], 4),
+
+    // ========================================================================
+    // 6. INSPECTIONS (Check-in, Check-out, Mid-term)
+    // ========================================================================
+    createChat('i1', ChatCategory.INSPECTIONS, 'Clerk: Sherlock Holmes', 'Closed', 'System', 'Check-In Report', [
+        { sender: 'system', text: 'Check-In Report generated for 14 High St.', time: 'Yesterday' },
+        { sender: 'agent', text: 'Sherlock noted a scuff on the hallway wall. Added to report.', time: 'Yesterday' }
+    ], 1),
+
+    createChat('i2', ChatCategory.INSPECTIONS, 'Tenant: Harry Potter', 'Qualifying', 'Email', 'Dispute', [
+        { sender: 'user', text: 'I do not agree with the deduction for the carpet cleaning. It was like that when I moved in.', time: 'Today 10:00 AM' },
+        { sender: 'agent', text: 'Hi Harry, checking the inventory photos from 2023. Bear with me.', time: 'Today 10:15 AM' }
+    ], 5),
+
+    // ========================================================================
+    // 7. MARKETING (Brochures, Photos)
+    // ========================================================================
+    createChat('mk1', ChatCategory.MARKETING, 'Vendor: Han Solo', 'Hot', 'Whatsapp', 'Photo Approval', [
+        { sender: 'agent', text: 'Hi Han, the photos are ready. Here is the link. Happy to go live?', time: '1 hour ago' },
+        { sender: 'user', text: 'They look great. But can we remove the photo of the garage? It looks cluttered.', time: '10 mins ago' }
+    ], 11),
+
+    // ========================================================================
+    // 8. GENERAL (Recruitment, Invoices)
+    // ========================================================================
+    createChat('g1', ChatCategory.GENERAL, 'Candidate: Frodo Baggins', 'New', 'Website', 'Job Application', [
+        { sender: 'user', text: 'Hi, I applied for the Junior Negotiator role. Any updates?', time: 'Yesterday' },
+        { sender: 'agent', text: 'Hi Frodo, we are reviewing CVs this week. Will be in touch.', time: 'Yesterday' }
+    ], undefined)
 ];

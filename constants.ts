@@ -1,8 +1,9 @@
+
 import { WorkflowCategory, Template, FlowNode, FlowEdge, ToneType, InboxConversation, WorkflowInstance, PipelineStage, Property, PropertyFeedback, PropertyOffer, ProgressionData, Task, LeadProfile, ChatCategory } from './types';
 import { Zap, MessageSquare, GitBranch, Bot, Database } from 'lucide-react';
 import { MOCK_CHATS_GENERATED } from './chatData';
 import { MASTER_PROPERTIES } from './propertiesData';
-import { GENERATED_LETTINGS_PIPELINE, GENERATED_SALES_PIPELINE, GENERATED_PROGRESSION_DATA } from './pipelineData';
+import { ALL_PIPELINES, GENERATED_PROGRESSION_DATA } from './pipelineData';
 
 export const NAVIGATION_ITEMS = [
   { name: 'Automations', icon: 'Workflow' },
@@ -257,6 +258,6 @@ export const MOCK_PROPERTY_OFFERS: PropertyOffer[] = [
 // REALISTIC PIPELINE DATA (GENERATED)
 // =============================================================================
 
-export const MOCK_LETTINGS_PIPELINE: PipelineStage[] = GENERATED_LETTINGS_PIPELINE;
-export const MOCK_SALES_PIPELINE: PipelineStage[] = GENERATED_SALES_PIPELINE;
+// Export the generated map
+export const GENERATED_PIPELINES_MAP = ALL_PIPELINES;
 export const MOCK_PROGRESSION_DATA: Record<string, ProgressionData> = GENERATED_PROGRESSION_DATA;

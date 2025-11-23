@@ -1,112 +1,185 @@
-import { PipelineStage, PipelineCard, ProgressionData, ChatCategory, InboxConversation, Property } from './types';
+
+import { PipelineStage, PipelineCard, ProgressionData, ChatCategory } from './types';
 import { MOCK_CHATS_GENERATED } from './chatData';
 import { MASTER_PROPERTIES } from './propertiesData';
 
-// Map Chat Status to Pipeline Stages
-const STATUS_TO_STAGE_LETTINGS: Record<string, string> = {
-  'New': 'stage-l1',
-  'Qualifying': 'stage-l2',
-  'Warm': 'stage-l3', // Viewing
-  'Hot': 'stage-l4', // Offer
-  'Closed': 'stage-l7', // Tenanted
-  'Nurture': 'stage-l2'
-};
-
-const STATUS_TO_STAGE_SALES: Record<string, string> = {
-  'New': 'stage-s1',
-  'Qualifying': 'stage-s2',
-  'Warm': 'stage-s3', // Viewing
-  'Hot': 'stage-s4', // Offer / Under Offer
-  'Closed': 'stage-s7', // Completion
-  'Nurture': 'stage-s2'
-};
+// --- STAGE DEFINITIONS FOR ALL PIPELINES ---
 
 const LETTINGS_STAGES = [
-    { id: 'stage-l1', title: 'Lead Captured', cards: [] },
-    { id: 'stage-l2', title: 'Qualifying', cards: [] },
-    { id: 'stage-l3', title: 'Viewing Booked', cards: [] },
-    { id: 'stage-l4', title: 'Under Offer', cards: [] },
-    { id: 'stage-l5', title: 'Referencing', cards: [] },
-    { id: 'stage-l6', title: 'Onboarding', cards: [] },
-    { id: 'stage-l7', title: 'Tenanted', cards: [] }
+    { id: 'l1', title: 'New Lead', cards: [] },
+    { id: 'l2', title: 'Viewing', cards: [] },
+    { id: 'l3', title: 'Offer Received', cards: [] },
+    { id: 'l4', title: 'Referencing', cards: [] },
+    { id: 'l5', title: 'Let Agreed', cards: [] }
 ];
 
 const SALES_STAGES = [
-    { id: 'stage-s1', title: 'Lead Captured', cards: [] },
-    { id: 'stage-s2', title: 'Qualifying', cards: [] },
-    { id: 'stage-s3', title: 'Viewing Booked', cards: [] },
-    { id: 'stage-s4', title: 'Under Offer', cards: [] },
-    { id: 'stage-s5', title: 'Conveyancing', cards: [] },
-    { id: 'stage-s6', title: 'Exchange', cards: [] },
-    { id: 'stage-s7', title: 'Completion', cards: [] }
+    { id: 's1', title: 'New Buyer', cards: [] },
+    { id: 's2', title: 'Viewing', cards: [] },
+    { id: 's3', title: 'Offer Made', cards: [] },
+    { id: 's4', title: 'Conveyancing', cards: [] },
+    { id: 's5', title: 'Exchange/Complete', cards: [] }
 ];
 
-// GENERATE DYNAMIC PIPELINE AND PROGRESSION DATA
-export const GENERATED_LETTINGS_PIPELINE: PipelineStage[] = JSON.parse(JSON.stringify(LETTINGS_STAGES));
-export const GENERATED_SALES_PIPELINE: PipelineStage[] = JSON.parse(JSON.stringify(SALES_STAGES));
+const VALUATION_STAGES = [
+    { id: 'v1', title: 'Valuation Req', cards: [] },
+    { id: 'v2', title: 'Booked', cards: [] },
+    { id: 'v3', title: 'Valued', cards: [] },
+    { id: 'v4', title: 'Instructed', cards: [] }
+];
+
+const MAINTENANCE_STAGES = [
+    { id: 'm1', title: 'Reported', cards: [] },
+    { id: 'm2', title: 'Quote Requested', cards: [] },
+    { id: 'm3', title: 'Work Order Sent', cards: [] },
+    { id: 'm4', title: 'Invoiced/Closed', cards: [] }
+];
+
+const COMPLIANCE_STAGES = [
+    { id: 'c1', title: 'Upcoming Exp', cards: [] },
+    { id: 'c2', title: 'Actioned', cards: [] },
+    { id: 'c3', title: 'Certificate Rx', cards: [] },
+    { id: 'c4', title: 'Remedial Works', cards: [] }
+];
+
+const INSPECTION_STAGES = [
+    { id: 'i1', title: 'Due', cards: [] },
+    { id: 'i2', title: 'Booked', cards: [] },
+    { id: 'i3', title: 'Report Review', cards: [] },
+    { id: 'i4', title: 'Dispute/Action', cards: [] }
+];
+
+const MARKETING_STAGES = [
+    { id: 'mk1', title: 'Pre-Listing', cards: [] },
+    { id: 'mk2', title: 'Photo/Media', cards: [] },
+    { id: 'mk3', title: 'Vendor Approval', cards: [] },
+    { id: 'mk4', title: 'Live', cards: [] }
+];
+
+// --- INITIALIZE EMPTY PIPELINES ---
+const pipelines: Record<string, PipelineStage[]> = {
+    'Lettings Progression': JSON.parse(JSON.stringify(LETTINGS_STAGES)),
+    'Sales Progression': JSON.parse(JSON.stringify(SALES_STAGES)),
+    'Valuations': JSON.parse(JSON.stringify(VALUATION_STAGES)),
+    'Maintenance': JSON.parse(JSON.stringify(MAINTENANCE_STAGES)),
+    'Compliance': JSON.parse(JSON.stringify(COMPLIANCE_STAGES)),
+    'Inspections': JSON.parse(JSON.stringify(INSPECTION_STAGES)),
+    'Marketing': JSON.parse(JSON.stringify(MARKETING_STAGES)),
+};
+
 export const GENERATED_PROGRESSION_DATA: Record<string, ProgressionData> = {};
 
-MOCK_CHATS_GENERATED.forEach((chat) => {
-    // Only process chats with linked properties for the pipeline
-    if (chat.lead.properties.length === 0) return;
+// --- INTELLIGENT MAPPING LOGIC ---
+// Maps a chat to a specific pipeline stage based on category and chat context
 
-    const property = MASTER_PROPERTIES.find(p => p.id === chat.lead.properties[0].id);
+MOCK_CHATS_GENERATED.forEach((chat) => {
+    // Determine which pipeline this chat belongs to
+    let pipelineName = '';
+    let stageId = '';
+
+    switch(chat.category) {
+        case ChatCategory.LETTINGS:
+            pipelineName = 'Lettings Progression';
+            if (chat.lead.status === 'New') stageId = 'l1';
+            else if (chat.lead.status === 'Qualifying') stageId = 'l2';
+            else if (chat.lead.status === 'Hot') stageId = 'l3'; // Offer
+            else if (chat.lead.status === 'Warm') stageId = 'l4'; // Ref
+            else stageId = 'l5';
+            break;
+        case ChatCategory.SALES:
+            pipelineName = 'Sales Progression';
+            if (chat.lead.status === 'New') stageId = 's1';
+            else if (chat.lead.status === 'Qualifying') stageId = 's2';
+            else if (chat.lead.status === 'Hot') stageId = 's3'; // Offer
+            else if (chat.lead.status === 'Closed') stageId = 's5';
+            else stageId = 's4';
+            break;
+        case ChatCategory.VALUATIONS:
+            pipelineName = 'Valuations';
+            if (chat.lead.status === 'New') stageId = 'v1';
+            else if (chat.lead.status === 'Qualifying') stageId = 'v2';
+            else if (chat.lead.status === 'Hot') stageId = 'v4'; // Instructed
+            else stageId = 'v3';
+            break;
+        case ChatCategory.MAINTENANCE:
+            pipelineName = 'Maintenance';
+            if (chat.lead.status === 'Hot') stageId = 'm1'; // Urgent/Reported
+            else if (chat.lead.status === 'Qualifying') stageId = 'm2'; // Quote
+            else if (chat.lead.status === 'Warm') stageId = 'm3'; // Work order
+            else stageId = 'm4';
+            break;
+        case ChatCategory.COMPLIANCE:
+            pipelineName = 'Compliance';
+            if (chat.lead.status === 'Hot') stageId = 'c1'; 
+            else if (chat.lead.status === 'Qualifying') stageId = 'c4'; // Remedial
+            else stageId = 'c2';
+            break;
+        case ChatCategory.INSPECTIONS:
+            pipelineName = 'Inspections';
+            if (chat.lead.status === 'Hot') stageId = 'i3'; // Review
+            else if (chat.lead.status === 'Qualifying') stageId = 'i4'; // Dispute
+            else stageId = 'i2';
+            break;
+        case ChatCategory.MARKETING:
+            pipelineName = 'Marketing';
+            if (chat.lead.status === 'Hot') stageId = 'mk3'; // Approval
+            else if (chat.lead.status === 'Closed') stageId = 'mk4'; // Live
+            else stageId = 'mk2';
+            break;
+        default: return; // General chats don't go to pipeline
+    }
+
+    // Property matching
+    const property = chat.lead.properties.length > 0 
+        ? MASTER_PROPERTIES.find(p => p.id === chat.lead.properties[0].id) 
+        : { address: 'General Inquiry', price: 'N/A', agent: 'JD' };
+
     if (!property) return;
 
-    const isLettings = property.type === 'Lettings';
-    const targetStageId = isLettings 
-        ? STATUS_TO_STAGE_LETTINGS[chat.lead.status] || 'stage-l1'
-        : STATUS_TO_STAGE_SALES[chat.lead.status] || 'stage-s1';
-
-    // Create Pipeline Card
-    const cardId = `pipe-${chat.id}`;
+    // Create Card
     const card: PipelineCard = {
-        id: cardId,
+        id: `pipe-${chat.id}`,
         title: property.address.split(',')[0],
-        subtitle: property.price,
+        subtitle: chat.lead.name,
         leadName: chat.lead.name,
         source: chat.source,
         value: property.price,
         date: chat.lastActivity,
-        triggerFlow: 'Auto-Response',
+        triggerFlow: chat.messages.some(m => m.sender === 'ai') ? 'AI Responder' : undefined,
         tags: [chat.lead.status],
-        assignedTo: property.agent
+        assignedTo: (property as any).agent || 'JD'
     };
 
-    // Add to appropriate pipeline
-    if (isLettings) {
-        const stage = GENERATED_LETTINGS_PIPELINE.find(s => s.id === targetStageId);
-        if (stage) stage.cards.push(card);
-    } else {
-        const stage = GENERATED_SALES_PIPELINE.find(s => s.id === targetStageId);
-        if (stage) stage.cards.push(card);
-    }
+    // Push to pipeline
+    const stage = pipelines[pipelineName].find(s => s.id === stageId);
+    if (stage) stage.cards.push(card);
 
-    // Generate Mock Progression Data for this card
-    GENERATED_PROGRESSION_DATA[cardId] = {
-        id: cardId,
+    // Generate AI Detail View
+    const lastMsg = chat.messages[chat.messages.length - 1].text;
+    GENERATED_PROGRESSION_DATA[card.id] = {
+        id: card.id,
         address: property.address,
         price: property.price,
         targetExchangeDate: 'TBD',
-        progress: chat.lead.status === 'Hot' ? 70 : chat.lead.status === 'Warm' ? 40 : 10,
-        aiSummary: `Deal for ${property.address} is currently in ${isLettings ? 'Lettings' : 'Sales'} progression. Lead ${chat.lead.name} is status: ${chat.lead.status}. Latest activity from ${chat.source}.`,
+        progress: 50,
+        aiSummary: `Deal context based on recent chat: "${lastMsg}". User is ${chat.lead.status}. Action required by agent to move to next stage.`,
         suggestedActions: [
-            { id: 'sa1', title: 'Follow Up', description: 'Check status update', type: 'Call' },
-            { id: 'sa2', title: 'Send Docs', description: 'Forward compliance documents', type: 'Task' }
+            { id: 'a1', title: 'Reply to Message', description: 'User is waiting for response', type: 'Task' }
         ],
-        nextSteps: [
-            { label: 'Review', date: 'Tomorrow' }
-        ],
+        nextSteps: [],
         parties: [
-            { role: 'Buyer', name: chat.lead.name, email: chat.lead.email, phone: chat.lead.phone, status: 'Active', avatar: chat.lead.name[0] },
-            { role: 'Seller', name: 'Vendor', email: 'vendor@example.com', phone: '07000 000000', status: 'Active', avatar: 'V' }
+            { role: 'Buyer', name: chat.lead.name, email: chat.lead.email, phone: chat.lead.phone, status: 'Active' }
         ],
-        milestones: [
-            { id: 'm1', title: 'Inquiry', status: 'Completed', completedDate: chat.lastActivity },
-            { id: 'm2', title: 'Viewing', status: chat.lead.status === 'Warm' ? 'In Progress' : 'Pending' }
-        ],
-        recentActivity: [
-            { id: 'ra1', text: `Message: "${chat.messages[0].text}"`, user: chat.lead.name, date: chat.lastActivity, type: 'Email' }
-        ]
+        milestones: [],
+        recentActivity: chat.messages.map(m => ({
+            id: m.id,
+            text: m.text,
+            user: m.sender === 'user' ? chat.lead.name : 'Agent',
+            date: m.timestamp,
+            type: 'System'
+        }))
     };
 });
+
+// EXPORT MAP
+export const ALL_PIPELINES = pipelines;
