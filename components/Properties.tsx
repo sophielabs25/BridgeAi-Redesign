@@ -44,6 +44,7 @@ const PropertyEditView: React.FC<{ property: Property; onBack: () => void; onSav
         setLoadingSuggestions(true);
         const result = await analyzePropertyData({
             address: property.address,
+            postcode: property.postcode,
             price: property.price,
             bedrooms: property.bedrooms,
             bathrooms: property.bathrooms,
@@ -53,7 +54,8 @@ const PropertyEditView: React.FC<{ property: Property; onBack: () => void; onSav
             portalStatus: property.portalStatus,
             epcRating: property.epcRating,
             media: property.media,
-            type: property.type
+            type: property.type,
+            additionalDetails: property.additionalDetails
         });
         setAiSuggestions(result);
         setLoadingSuggestions(false);
@@ -300,6 +302,7 @@ const PropertyDetailsView: React.FC<{ property: Property; onBack: () => void; on
       try {
         const result = await analyzePropertyData({
           address: property.address,
+          postcode: property.postcode,
           price: property.price,
           bedrooms: property.bedrooms,
           bathrooms: property.bathrooms,
@@ -309,7 +312,8 @@ const PropertyDetailsView: React.FC<{ property: Property; onBack: () => void; on
           portalStatus: property.portalStatus,
           epcRating: property.epcRating,
           media: property.media,
-          type: property.type
+          type: property.type,
+          additionalDetails: property.additionalDetails
         });
         
         // Only update state if we're still viewing the same property
@@ -569,6 +573,18 @@ const PropertyDetailsView: React.FC<{ property: Property; onBack: () => void; on
                                 <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                                     <table className="w-full text-sm text-left">
                                         <tbody className="divide-y divide-slate-100">
+                                            {property.type === 'Lettings' && (
+                                                <>
+                                                    <tr className="hover:bg-slate-50">
+                                                        <td className="px-6 py-4 font-medium text-slate-900 w-1/3">Furnishing</td>
+                                                        <td className="px-6 py-4 text-slate-600">{property.additionalDetails?.furnishing || 'Not specified'}</td>
+                                                    </tr>
+                                                    <tr className="hover:bg-slate-50">
+                                                        <td className="px-6 py-4 font-medium text-slate-900">Available From</td>
+                                                        <td className="px-6 py-4 text-slate-600">{property.additionalDetails?.availableFrom || 'Not specified'}</td>
+                                                    </tr>
+                                                </>
+                                            )}
                                             <tr className="hover:bg-slate-50">
                                                 <td className="px-6 py-4 font-medium text-slate-900 w-1/3">Council Tax</td>
                                                 <td className="px-6 py-4 text-slate-600">{property.additionalDetails?.councilTax}</td>
@@ -598,6 +614,16 @@ const PropertyDetailsView: React.FC<{ property: Property; onBack: () => void; on
                                                     </span>
                                                 </td>
                                             </tr>
+                                            {property.commute && (
+                                                <tr className="hover:bg-slate-50">
+                                                    <td className="px-6 py-4 font-medium text-slate-900">Commute</td>
+                                                    <td className="px-6 py-4 text-slate-600">
+                                                        {property.commute.station && property.commute.duration ? 
+                                                            `${property.commute.duration} to ${property.commute.station}` : 
+                                                            'Not specified'}
+                                                    </td>
+                                                </tr>
+                                            )}
                                         </tbody>
                                     </table>
                                 </div>
