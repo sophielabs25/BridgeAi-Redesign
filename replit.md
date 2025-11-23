@@ -66,6 +66,7 @@ BridgeAI is a Real Estate automation platform that provides workflow builders, p
   - Production server serves API + static files on single port
   - Environment-aware port configuration (dev: 3001, prod: 5000)
   - No development scripts in production deployment
+  - Express 5 compatible catch-all route for SPA routing
 
 ## Environment Variables
 - `OPENAI_API_KEY` (Secret) - Required for AI features
