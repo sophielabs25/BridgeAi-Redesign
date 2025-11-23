@@ -298,17 +298,83 @@ const Contacts: React.FC = () => {
           {/* Linked Properties */}
           {contact.linkedProperties && contact.linkedProperties.length > 0 && (
             <div>
-              <h3 className="text-lg font-semibold text-slate-900 mb-3">Linked Properties</h3>
-              <div className="space-y-2">
-                {contact.linkedProperties.map((propId) => (
-                  <div key={propId} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-                    <span className="text-slate-700">{propId}</span>
-                    <button className="text-cyan-600 hover:text-cyan-700 flex items-center gap-1">
-                      <ExternalLink className="w-4 h-4" />
-                      View
-                    </button>
-                  </div>
-                ))}
+              <h3 className="text-lg font-semibold text-slate-900 mb-3">
+                Linked Properties ({contact.linkedProperties.length})
+              </h3>
+              <div className="grid grid-cols-1 gap-4">
+                {contact.linkedProperties.map((propId) => {
+                  const property = MASTER_PROPERTIES.find(p => p.id === propId);
+                  if (!property) {
+                    return (
+                      <div key={propId} className="p-3 bg-slate-50 rounded-lg text-slate-500">
+                        Property not found: {propId}
+                      </div>
+                    );
+                  }
+                  
+                  const getStatusColor = (status: string) => {
+                    const colors: Record<string, string> = {
+                      'Available': 'bg-green-100 text-green-700',
+                      'Under Offer': 'bg-yellow-100 text-yellow-700',
+                      'Let Agreed': 'bg-blue-100 text-blue-700',
+                      'Sold': 'bg-purple-100 text-purple-700',
+                      'Withdrawn': 'bg-gray-100 text-gray-700'
+                    };
+                    return colors[status] || 'bg-slate-100 text-slate-700';
+                  };
+
+                  return (
+                    <div key={propId} className="bg-white border border-slate-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow">
+                      <div className="flex gap-4">
+                        {/* Property Image */}
+                        <div className="w-40 h-32 flex-shrink-0">
+                          <img 
+                            src={property.image} 
+                            alt={property.address}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        
+                        {/* Property Details */}
+                        <div className="flex-1 p-4">
+                          <div className="flex items-start justify-between mb-2">
+                            <div>
+                              <h4 className="font-semibold text-slate-900">{property.address}</h4>
+                              <p className="text-sm text-slate-600">{property.postcode}</p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-lg font-bold text-cyan-600">{property.price}</p>
+                              <span className="text-xs text-slate-500">{property.type}</span>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center gap-4 text-sm text-slate-600 mb-3">
+                            <div className="flex items-center gap-1">
+                              <Building2 className="w-4 h-4" />
+                              <span>{property.bedrooms} bed</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <span>{property.bathrooms} bath</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <span>{property.sqft} sqft</span>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center justify-between">
+                            <span className={`${getStatusColor(property.status)} px-3 py-1 rounded-full text-xs font-medium`}>
+                              {property.status}
+                            </span>
+                            <button className="text-cyan-600 hover:text-cyan-700 flex items-center gap-1 text-sm font-medium">
+                              <ExternalLink className="w-4 h-4" />
+                              View Full Details
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}

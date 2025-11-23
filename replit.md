@@ -41,9 +41,10 @@ BridgeAI is a Real Estate automation platform that provides workflow builders, p
   - **Multi-Tab Interface**: All Contacts, Landlords, Tenants, Buyers, Vendors, Applicants, Contractors, Suppliers, Leads
   - **Contact Types**: 8 different contact categories with type-specific fields
   - **Search & Filter**: Real-time search by name, email, or phone number
+  - **Properties Column**: Shows linked properties directly in the table (up to 2 with "+X more" indicator)
   - **Contact Details**: Full contact profile with type-specific information (portfolio value for landlords, lease dates for tenants, trade info for contractors, etc.)
+  - **Rich Property Display**: Linked properties shown with full details (image, address, price, beds/baths, status)
   - **Quick Actions**: One-click Call, Email, and WhatsApp buttons
-  - **Linked Properties**: View and manage properties associated with each contact
   - **Status Management**: Active, Inactive, and Prospect statuses
   - **Tags System**: Categorize contacts with custom tags
   - **Ratings**: Contractor rating system (out of 5 stars)
