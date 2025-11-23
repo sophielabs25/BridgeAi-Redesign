@@ -1,7 +1,37 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { FlowNode, FlowEdge, Position, ToneType, WorkflowCategory } from '../types';
-import { X, GripVertical, Zap, MessageSquare, GitBranch, Bot, Save, Settings, ZoomIn, ZoomOut, MousePointer2, LayoutGrid, Move, Play, Undo, Redo, MoreHorizontal, Database, CheckCircle } from 'lucide-react';
+import { X, GripVertical, Zap, MessageSquare, GitBranch, Bot, Save, Settings, ZoomIn, ZoomOut, MousePointer2, LayoutGrid, Move, Play, Undo, Redo, MoreHorizontal, Database, CheckCircle, Mail, Phone } from 'lucide-react';
 import { generateNodeDescription } from '../services/apiService';
+
+// Integration Icons Map
+const INTEGRATION_ICONS = {
+  // CRMs
+  'alto': { emoji: '🏢', color: 'from-purple-500 to-purple-600', name: 'Alto' },
+  'apex27': { emoji: '📊', color: 'from-orange-500 to-orange-600', name: 'Apex27' },
+  'reapit': { emoji: '🏠', color: 'from-blue-500 to-blue-600', name: 'Reapit' },
+  // Portals
+  'zoopla': { emoji: '🏘️', color: 'from-purple-600 to-purple-700', name: 'Zoopla' },
+  'rightmove': { emoji: '🏡', color: 'from-green-600 to-green-700', name: 'Rightmove' },
+  'onthemarket': { emoji: '🏢', color: 'from-blue-600 to-blue-700', name: 'OnTheMarket' },
+  // Channels
+  'whatsapp': { emoji: '💬', color: 'from-green-500 to-green-600', name: 'WhatsApp' },
+  'email': { emoji: '📧', color: 'from-blue-500 to-blue-600', name: 'Email' },
+  'sms': { emoji: '📱', color: 'from-cyan-500 to-cyan-600', name: 'SMS' },
+  'slack': { emoji: '💼', color: 'from-purple-500 to-purple-600', name: 'Slack' },
+  'gmail': { emoji: '📧', color: 'from-red-500 to-red-600', name: 'Gmail' },
+};
+
+const detectIntegration = (node: FlowNode): { emoji: string; color: string; name: string } | null => {
+  const text = `${node.label} ${JSON.stringify(node.data || {})}`.toLowerCase();
+  
+  for (const [key, value] of Object.entries(INTEGRATION_ICONS)) {
+    if (text.includes(key)) {
+      return value;
+    }
+  }
+  
+  return null;
+};
 
 // --- ALTO API DEFINITION ---
 // Based on: https://developers.zoopla.co.uk/reference/get_appraisal-leads
@@ -249,8 +279,8 @@ const FlowBuilder: React.FC<FlowBuilderProps> = ({ category, tone, initialNodes 
     setIsAnalyzing(false);
   };
 
-  const getConnectorPoint = (node: FlowNode) => ({ x: node.position.x + 140, y: node.position.y + 90 });
-  const getTopConnectorPoint = (node: FlowNode) => ({ x: node.position.x + 140, y: node.position.y });
+  const getConnectorPoint = (node: FlowNode) => ({ x: node.position.x + 280, y: node.position.y + 80 });
+  const getTopConnectorPoint = (node: FlowNode) => ({ x: node.position.x, y: node.position.y + 80 });
 
   return (
     <div className="flex h-full bg-white relative overflow-hidden rounded-b-3xl">
@@ -331,19 +361,19 @@ const FlowBuilder: React.FC<FlowBuilderProps> = ({ category, tone, initialNodes 
                 if (!source || !target) return null;
                 const start = getConnectorPoint(source);
                 const end = getTopConnectorPoint(target);
-                const deltaY = Math.abs(end.y - start.y);
-                const controlPointY = Math.max(deltaY * 0.5, 60);
+                const deltaX = Math.abs(end.x - start.x);
+                const controlPointX = Math.max(deltaX * 0.5, 60);
 
                 return (
                 <g key={edge.id}>
                     <path
-                    d={`M ${start.x} ${start.y} C ${start.x} ${start.y + controlPointY}, ${end.x} ${end.y - controlPointY}, ${end.x} ${end.y}`}
+                    d={`M ${start.x} ${start.y} C ${start.x + controlPointX} ${start.y}, ${end.x - controlPointX} ${end.y}, ${end.x} ${end.y}`}
                     stroke="#e2e8f0"
                     strokeWidth="4"
                     fill="none"
                     />
                     <path
-                    d={`M ${start.x} ${start.y} C ${start.x} ${start.y + controlPointY}, ${end.x} ${end.y - controlPointY}, ${end.x} ${end.y}`}
+                    d={`M ${start.x} ${start.y} C ${start.x + controlPointX} ${start.y}, ${end.x - controlPointX} ${end.y}, ${end.x} ${end.y}`}
                     stroke="#94a3b8"
                     strokeWidth="2"
                     fill="none"
@@ -366,6 +396,8 @@ const FlowBuilder: React.FC<FlowBuilderProps> = ({ category, tone, initialNodes 
                     ? (node.data?.category && node.data?.action ? `${node.data.category} • ${node.data.action}` : 'Configure Sync')
                     : (node.type === 'ai_process' ? `Processing with ${tone} tone.` : 'Awaiting configuration.');
 
+                const integration = detectIntegration(node);
+
                 return (
                     <div
                     key={node.id}
@@ -376,8 +408,8 @@ const FlowBuilder: React.FC<FlowBuilderProps> = ({ category, tone, initialNodes 
                     style={{ left: node.position.x, top: node.position.y }}
                     onMouseDown={(e) => handleNodeMouseDown(e, node.id)}
                     >
-                    {/* Input Port */}
-                    <div className="absolute -top-2.5 left-1/2 transform -translate-x-1/2 w-5 h-5 bg-white rounded-full border-2 border-slate-200 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-20 hover:border-cyan-400">
+                    {/* Input Port - Left Side */}
+                    <div className="absolute -left-2.5 top-1/2 transform -translate-y-1/2 w-5 h-5 bg-white rounded-full border-2 border-slate-200 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-20 hover:border-cyan-400">
                         <div className="w-1.5 h-1.5 bg-slate-300 rounded-full"></div>
                     </div>
 
@@ -394,11 +426,21 @@ const FlowBuilder: React.FC<FlowBuilderProps> = ({ category, tone, initialNodes 
                             <p className="text-[11px] text-slate-400 line-clamp-2">
                                 {subLabel}
                             </p>
+                            
+                            {/* Integration Badge */}
+                            {integration && (
+                              <div className="mt-3 pt-3 border-t border-slate-100">
+                                <div className={`inline-flex items-center gap-1.5 bg-gradient-to-r ${integration.color} text-white px-2.5 py-1 rounded-lg text-[10px] font-bold shadow-sm`}>
+                                  <span className="text-sm">{integration.emoji}</span>
+                                  {integration.name}
+                                </div>
+                              </div>
+                            )}
                         </div>
                     </div>
 
-                    {/* Output Port */}
-                    <div className="absolute -bottom-2.5 left-1/2 transform -translate-x-1/2 w-5 h-5 bg-white rounded-full border-2 border-slate-200 flex items-center justify-center z-20 hover:border-cyan-400 hover:scale-110 transition-transform cursor-crosshair">
+                    {/* Output Port - Right Side */}
+                    <div className="absolute -right-2.5 top-1/2 transform -translate-y-1/2 w-5 h-5 bg-white rounded-full border-2 border-slate-200 flex items-center justify-center z-20 hover:border-cyan-400 hover:scale-110 transition-transform cursor-crosshair">
                          <div className="w-1.5 h-1.5 bg-slate-400 rounded-full"></div>
                     </div>
                     </div>

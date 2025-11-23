@@ -290,7 +290,7 @@ Return ONLY valid JSON in this exact format:
   ]
 }
 
-Create 4-8 nodes in a logical vertical flow. Space nodes 180px apart vertically (y-axis). Center all nodes at x: 300.`;
+Create 4-8 nodes in a logical horizontal flow. Space nodes 350px apart horizontally (x-axis). Position all nodes at y: 100 for a clean horizontal layout.`;
 
     const response = await openai.chat.completions.create({
       model: 'gpt-5',
