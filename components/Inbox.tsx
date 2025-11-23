@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { InboxConversation, LeadSource, ChatCategory } from '../types';
 import { MOCK_INBOX_CONVERSATIONS, CHAT_CATEGORIES } from '../constants';
 import { Search, Filter, Phone, Mail, MessageCircle, Home, Globe, Send, Bot, MoreHorizontal, CheckCircle, BedDouble, X, Smartphone, MessageSquare, UserPlus, Flag, AlertCircle, Check, TrendingUp, Award, ShieldCheck, Wrench, ClipboardCheck, Megaphone, Inbox as InboxIcon } from 'lucide-react';
@@ -98,7 +98,18 @@ const FilterCheckboxItem: React.FC<FilterCheckboxItemProps> = ({
 
 const Inbox: React.FC = () => {
   const [activeCategory, setActiveCategory] = useState<ChatCategory>(ChatCategory.LETTINGS);
-  const [conversations, setConversations] = useState<InboxConversation[]>(MOCK_INBOX_CONVERSATIONS);
+  const [conversations, setConversations] = useState<InboxConversation[]>(() => {
+    // Load conversations from localStorage on initial mount
+    try {
+      const saved = localStorage.getItem('inbox_conversations');
+      if (saved) {
+        return JSON.parse(saved);
+      }
+    } catch (e) {
+      console.error('Failed to load conversations from localStorage:', e);
+    }
+    return MOCK_INBOX_CONVERSATIONS;
+  });
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [messageInput, setMessageInput] = useState('');
@@ -118,6 +129,7 @@ const Inbox: React.FC = () => {
     if (!messageInput.trim() || !selectedId) return;
 
     const messageText = messageInput.trim();
+    const currentSelectedId = selectedId;
     setMessageInput('');
 
     // Add agent message to conversation
@@ -128,18 +140,28 @@ const Inbox: React.FC = () => {
       timestamp: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
     };
 
-    setConversations(prevConversations =>
-      prevConversations.map(conv =>
-        conv.id === selectedId
+    // Update conversations with agent message
+    setConversations(prevConversations => {
+      const updated = prevConversations.map(conv =>
+        conv.id === currentSelectedId
           ? { ...conv, messages: [...conv.messages, agentMessage] }
           : conv
-      )
-    );
+      );
+      
+      // Store in localStorage for persistence
+      try {
+        localStorage.setItem('inbox_conversations', JSON.stringify(updated));
+      } catch (e) {
+        console.error('Failed to save conversations to localStorage:', e);
+      }
+      
+      return updated;
+    });
 
     // Get AI response
     setIsAiTyping(true);
     try {
-      const selectedConv = conversations.find(c => c.id === selectedId);
+      const selectedConv = conversations.find(c => c.id === currentSelectedId);
       const response = await fetch('/api/ai/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -148,6 +170,10 @@ const Inbox: React.FC = () => {
           leadContext: selectedConv?.lead
         })
       });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
       const data = await response.json();
 
@@ -159,21 +185,46 @@ const Inbox: React.FC = () => {
         timestamp: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
       };
 
+      setConversations(prevConversations => {
+        const updated = prevConversations.map(conv =>
+          conv.id === currentSelectedId
+            ? { ...conv, messages: [...conv.messages, aiMessage] }
+            : conv
+        );
+        
+        // Store in localStorage for persistence
+        try {
+          localStorage.setItem('inbox_conversations', JSON.stringify(updated));
+        } catch (e) {
+          console.error('Failed to save conversations to localStorage:', e);
+        }
+        
+        return updated;
+      });
+    } catch (error) {
+      console.error('Failed to get AI response:', error);
+      
+      // Add error message
+      const errorMessage = {
+        id: `msg-${Date.now()}-error`,
+        sender: 'system' as const,
+        text: 'Sorry, I encountered an error. Please try again.',
+        timestamp: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+      };
+
       setConversations(prevConversations =>
         prevConversations.map(conv =>
-          conv.id === selectedId
-            ? { ...conv, messages: [...conv.messages, aiMessage] }
+          conv.id === currentSelectedId
+            ? { ...conv, messages: [...conv.messages, errorMessage] }
             : conv
         )
       );
-    } catch (error) {
-      console.error('Failed to get AI response:', error);
     } finally {
       setIsAiTyping(false);
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
@@ -604,7 +655,7 @@ const Inbox: React.FC = () => {
                        placeholder="Type a message..." 
                        value={messageInput}
                        onChange={(e) => setMessageInput(e.target.value)}
-                       onKeyPress={handleKeyPress}
+                       onKeyDown={handleKeyDown}
                        className="flex-1 bg-transparent border-none focus:ring-0 text-sm resize-none max-h-32 py-2 px-2 placeholder-slate-400"
                        rows={1}
                        disabled={isAiTyping}
