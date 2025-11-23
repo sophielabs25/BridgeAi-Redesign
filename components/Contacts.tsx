@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Contact, ContactType } from '../types';
 import { MASTER_CONTACTS } from '../contactsData';
+import { MASTER_PROPERTIES } from '../propertiesData';
 import { 
   Search, Plus, Phone, Mail, MessageCircle, Star, Building2, 
   User, Users, Wrench, Package, UserPlus, MapPin, Calendar,
@@ -36,6 +37,19 @@ const Contacts: React.FC = () => {
       contact.phone.includes(searchQuery);
     return matchesTab && matchesSearch;
   });
+
+  // Get property addresses for a contact
+  const getPropertyAddresses = (contact: Contact): string[] => {
+    if (!contact.linkedProperties || contact.linkedProperties.length === 0) {
+      return [];
+    }
+    return contact.linkedProperties
+      .map(propId => {
+        const property = MASTER_PROPERTIES.find(p => p.id === propId);
+        return property ? property.address : propId;
+      })
+      .filter(Boolean);
+  };
 
   const getStatusBadge = (status: string) => {
     const colors: Record<string, string> = {
@@ -399,6 +413,7 @@ const Contacts: React.FC = () => {
                     <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Name</th>
                     <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Type</th>
                     <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Contact</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Properties</th>
                     <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Status</th>
                     <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Tags</th>
                     <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Actions</th>
@@ -432,6 +447,29 @@ const Contacts: React.FC = () => {
                           <div className="text-slate-900">{contact.email}</div>
                           <div className="text-slate-500">{contact.phone}</div>
                         </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        {(() => {
+                          const addresses = getPropertyAddresses(contact);
+                          if (addresses.length === 0) {
+                            return <span className="text-sm text-slate-400">No properties</span>;
+                          }
+                          return (
+                            <div className="text-sm space-y-1">
+                              {addresses.slice(0, 2).map((address, idx) => (
+                                <div key={idx} className="flex items-center gap-1 text-slate-700">
+                                  <Building2 className="w-3 h-3 text-slate-400 flex-shrink-0" />
+                                  <span className="truncate max-w-[200px]" title={address}>{address}</span>
+                                </div>
+                              ))}
+                              {addresses.length > 2 && (
+                                <div className="text-xs text-cyan-600 font-medium">
+                                  +{addresses.length - 2} more
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })()}
                       </td>
                       <td className="px-6 py-4">
                         <span className={`${getStatusBadge(contact.status)} px-3 py-1 rounded-full text-sm font-medium`}>
