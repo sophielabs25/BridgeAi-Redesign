@@ -30,7 +30,235 @@ const getStatusColor = (status: string) => {
     }
 };
 
-const PropertyDetailsView: React.FC<{ property: Property; onBack: () => void }> = ({ property, onBack }) => {
+const PropertyEditView: React.FC<{ property: Property; onBack: () => void; onSave: (updatedProperty: Property) => void }> = ({ property, onBack, onSave }) => {
+    const [editedProperty, setEditedProperty] = useState<Property>(property);
+    const [aiSuggestions, setAiSuggestions] = useState<any>(null);
+    const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+    const [appliedSuggestions, setAppliedSuggestions] = useState<Set<string>>(new Set());
+
+    useEffect(() => {
+        loadAISuggestions();
+    }, []);
+
+    const loadAISuggestions = async () => {
+        setLoadingSuggestions(true);
+        const result = await analyzePropertyData({
+            address: property.address,
+            price: property.price,
+            bedrooms: property.bedrooms,
+            bathrooms: property.bathrooms,
+            sqft: property.sqft,
+            description: property.description,
+            features: property.features,
+            portalStatus: property.portalStatus,
+            epcRating: property.epcRating,
+            media: property.media,
+            type: property.type
+        });
+        setAiSuggestions(result);
+        setLoadingSuggestions(false);
+    };
+
+    const applyAISuggestion = (suggestionKey: string) => {
+        if (suggestionKey === 'description' && aiSuggestions?.sellingSummary) {
+            setEditedProperty({ ...editedProperty, description: aiSuggestions.sellingSummary });
+            setAppliedSuggestions(new Set([...appliedSuggestions, suggestionKey]));
+        }
+    };
+
+    const handleInputChange = (field: string, value: any) => {
+        setEditedProperty({ ...editedProperty, [field]: value });
+    };
+
+    const handleFeatureChange = (index: number, value: string) => {
+        const newFeatures = [...editedProperty.features];
+        newFeatures[index] = value;
+        setEditedProperty({ ...editedProperty, features: newFeatures });
+    };
+
+    const addFeature = () => {
+        setEditedProperty({ ...editedProperty, features: [...editedProperty.features, ''] });
+    };
+
+    const removeFeature = (index: number) => {
+        setEditedProperty({ ...editedProperty, features: editedProperty.features.filter((_, i) => i !== index) });
+    };
+
+    const handleSave = () => {
+        onSave(editedProperty);
+    };
+
+    return (
+        <div className="flex flex-col h-full bg-[#f8fafc] animate-in fade-in slide-in-from-right-4 duration-300">
+            {/* Header */}
+            <div className="bg-white border-b border-slate-200 px-8 py-6 sticky top-0 z-20">
+                <button onClick={onBack} className="flex items-center gap-2 text-slate-500 hover:text-slate-800 mb-4 transition-colors text-sm font-medium">
+                    <ArrowLeft className="w-4 h-4" /> Back to Details
+                </button>
+                <div className="flex justify-between items-center">
+                    <h2 className="text-2xl font-bold text-slate-900">Edit Property</h2>
+                    <div className="flex gap-2">
+                        <button onClick={onBack} className="px-4 py-2 border border-slate-200 text-slate-600 rounded-lg font-bold hover:bg-slate-50 transition-colors">
+                            Cancel
+                        </button>
+                        <button onClick={handleSave} className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg font-bold hover:bg-emerald-700 shadow-lg shadow-emerald-500/20 transition-all">
+                            <CheckCircle className="w-4 h-4" /> Save Changes
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto custom-scrollbar">
+                <div className="max-w-4xl mx-auto p-8 space-y-6">
+                    {/* AI Auto-Fill Box */}
+                    {loadingSuggestions ? (
+                        <div className="bg-cyan-50 p-4 rounded-xl border border-cyan-200 flex items-center gap-3">
+                            <Loader className="w-5 h-5 text-cyan-600 animate-spin" />
+                            <p className="text-sm font-medium text-cyan-700">Loading AI suggestions...</p>
+                        </div>
+                    ) : aiSuggestions ? (
+                        <div className="bg-gradient-to-r from-cyan-50 to-blue-50 p-4 rounded-xl border border-cyan-200 flex items-start justify-between">
+                            <div className="flex items-start gap-3">
+                                <Lightbulb className="w-5 h-5 text-cyan-600 shrink-0 mt-0.5" />
+                                <div>
+                                    <p className="text-sm font-bold text-slate-900">AI Suggestions Available</p>
+                                    <p className="text-xs text-slate-600 mt-1">Click "Apply" next to fields to auto-fill with AI recommendations</p>
+                                </div>
+                            </div>
+                        </div>
+                    ) : null}
+
+                    {/* Basic Info */}
+                    <div className="bg-white p-6 rounded-xl border border-slate-200 space-y-4">
+                        <h3 className="font-bold text-slate-900 text-lg">Basic Information</h3>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-2">Address</label>
+                                <input type="text" value={editedProperty.address} onChange={(e) => handleInputChange('address', e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500" />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-2">Postcode</label>
+                                <input type="text" value={editedProperty.postcode} onChange={(e) => handleInputChange('postcode', e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500" />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-2">Price</label>
+                                <input type="text" value={editedProperty.price} onChange={(e) => handleInputChange('price', e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500" />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-2">Status</label>
+                                <select value={editedProperty.status} onChange={(e) => handleInputChange('status', e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                                    <option>Available</option>
+                                    <option>Under Offer</option>
+                                    <option>Let Agreed</option>
+                                    <option>Sold</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-3 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-2">Bedrooms</label>
+                                <input type="number" value={editedProperty.bedrooms} onChange={(e) => handleInputChange('bedrooms', parseInt(e.target.value))} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500" />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-2">Bathrooms</label>
+                                <input type="number" value={editedProperty.bathrooms} onChange={(e) => handleInputChange('bathrooms', parseInt(e.target.value))} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500" />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-2">Sqft</label>
+                                <input type="number" value={editedProperty.sqft} onChange={(e) => handleInputChange('sqft', parseInt(e.target.value))} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500" />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Description with AI */}
+                    <div className="bg-white p-6 rounded-xl border border-slate-200 space-y-4">
+                        <div className="flex items-center justify-between">
+                            <h3 className="font-bold text-slate-900 text-lg">Description</h3>
+                            {aiSuggestions?.sellingSummary && !appliedSuggestions.has('description') && (
+                                <button onClick={() => applyAISuggestion('description')} className="flex items-center gap-1 px-3 py-1.5 bg-cyan-100 text-cyan-700 text-xs font-bold rounded hover:bg-cyan-200 transition-colors">
+                                    <Lightbulb className="w-3 h-3" /> Apply AI
+                                </button>
+                            )}
+                            {appliedSuggestions.has('description') && (
+                                <span className="flex items-center gap-1 px-3 py-1.5 bg-emerald-100 text-emerald-700 text-xs font-bold rounded">
+                                    <CheckCircle className="w-3 h-3" /> Applied
+                                </span>
+                            )}
+                        </div>
+                        <textarea value={editedProperty.description} onChange={(e) => handleInputChange('description', e.target.value)} rows={4} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500" placeholder="Enter property description..." />
+                    </div>
+
+                    {/* Features */}
+                    <div className="bg-white p-6 rounded-xl border border-slate-200 space-y-4">
+                        <div className="flex items-center justify-between">
+                            <h3 className="font-bold text-slate-900 text-lg">Features</h3>
+                            <button onClick={addFeature} className="flex items-center gap-1 px-3 py-1.5 bg-cyan-600 text-white text-xs font-bold rounded hover:bg-cyan-700 transition-colors">
+                                <Plus className="w-3 h-3" /> Add Feature
+                            </button>
+                        </div>
+                        <div className="space-y-2">
+                            {editedProperty.features.map((feature, idx) => (
+                                <div key={idx} className="flex items-center gap-2">
+                                    <input type="text" value={feature} onChange={(e) => handleFeatureChange(idx, e.target.value)} className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500" placeholder="Feature name..." />
+                                    <button onClick={() => removeFeature(idx)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors">
+                                        <X className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Additional Details */}
+                    <div className="bg-white p-6 rounded-xl border border-slate-200 space-y-4">
+                        <h3 className="font-bold text-slate-900 text-lg">Additional Details</h3>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-2">Council Tax</label>
+                                <input type="text" value={editedProperty.additionalDetails.councilTax} onChange={(e) => handleInputChange('additionalDetails', { ...editedProperty.additionalDetails, councilTax: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500" />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-2">EPC Rating</label>
+                                <select value={editedProperty.epcRating} onChange={(e) => handleInputChange('epcRating', e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                                    <option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-2">Tenure</label>
+                                <input type="text" value={editedProperty.additionalDetails.tenure} onChange={(e) => handleInputChange('additionalDetails', { ...editedProperty.additionalDetails, tenure: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500" />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-2">Availability</label>
+                                <input type="text" value={editedProperty.additionalDetails.availability} onChange={(e) => handleInputChange('additionalDetails', { ...editedProperty.additionalDetails, availability: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500" />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Portal Status */}
+                    <div className="bg-white p-6 rounded-xl border border-slate-200 space-y-4">
+                        <h3 className="font-bold text-slate-900 text-lg">Portal Status</h3>
+                        <div className="space-y-3">
+                            <label className="flex items-center gap-3 cursor-pointer">
+                                <input type="checkbox" checked={editedProperty.portalStatus.rightmove} onChange={(e) => handleInputChange('portalStatus', { ...editedProperty.portalStatus, rightmove: e.target.checked })} className="w-4 h-4 rounded" />
+                                <span className="text-sm font-medium text-slate-700">Rightmove</span>
+                            </label>
+                            <label className="flex items-center gap-3 cursor-pointer">
+                                <input type="checkbox" checked={editedProperty.portalStatus.zoopla} onChange={(e) => handleInputChange('portalStatus', { ...editedProperty.portalStatus, zoopla: e.target.checked })} className="w-4 h-4 rounded" />
+                                <span className="text-sm font-medium text-slate-700">Zoopla</span>
+                            </label>
+                            <label className="flex items-center gap-3 cursor-pointer">
+                                <input type="checkbox" checked={editedProperty.portalStatus.website} onChange={(e) => handleInputChange('portalStatus', { ...editedProperty.portalStatus, website: e.target.checked })} className="w-4 h-4 rounded" />
+                                <span className="text-sm font-medium text-slate-700">Website</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const PropertyDetailsView: React.FC<{ property: Property; onBack: () => void; onEdit: () => void }> = ({ property, onBack, onEdit }) => {
     const [activeTab, setActiveTab] = useState<'Overview' | 'Enquiries' | 'Offers' | 'Feedback' | 'AI Suggestions'>('Overview');
     
     // Sub-tabs for the "Overview" section (Content Management)
@@ -120,7 +348,7 @@ const PropertyDetailsView: React.FC<{ property: Property; onBack: () => void }> 
 
                     <div className="flex gap-2">
                          <button className="p-2.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors"><Share2 className="w-4 h-4" /></button>
-                         <button className="p-2.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors"><Edit className="w-4 h-4" /></button>
+                         <button onClick={onEdit} className="p-2.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors"><Edit className="w-4 h-4" /></button>
                          <button className="flex items-center gap-2 px-4 py-2.5 bg-cyan-600 text-white rounded-lg font-bold hover:bg-cyan-700 shadow-lg shadow-cyan-500/20 transition-all">
                              <Zap className="w-4 h-4" /> Actions
                          </button>
