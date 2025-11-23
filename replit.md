@@ -14,6 +14,7 @@ BridgeAI is a Real Estate automation platform that provides workflow builders, p
 ## Project Structure
 ```
 ├── components/          # React components
+│   ├── AIFlowCreator.tsx # AI chat interface for flow generation
 │   ├── Dashboard.tsx
 │   ├── FlowBuilder.tsx  # Visual workflow builder
 │   ├── Inbox.tsx
@@ -36,6 +37,14 @@ BridgeAI is a Real Estate automation platform that provides workflow builders, p
 ```
 
 ## Recent Changes (November 23, 2025)
+- ✅ **AI Flow Creator**: Chat-based automation workflow generation
+  - Natural language interface where users describe automation needs
+  - AI analyzes requirements and generates complete workflow structures
+  - Automatic node and edge generation with proper positioning
+  - Seamless transition from chat to visual FlowBuilder for customization
+  - Backend endpoint `/api/ai/generate-flow` powered by GPT-5
+  - Support for all node types: trigger, action, condition, ai_process, integration
+  - "New Flow" button now launches AI chat interface instead of template gallery
 - ✅ **Consistent AI Suggestions (Top 10-15 per Property)**: Deterministic suggestion system
   - Backend generates 8-12 comprehensive suggestions per property
   - Intelligent caching mechanism using property address + postcode + price + type
@@ -152,6 +161,7 @@ The application uses a secure backend architecture to protect the OpenAI API key
 - `POST /api/ai/generate-node-description` - Generate workflow node descriptions
 - `POST /api/ai/analyze-flow-completeness` - Analyze workflow completeness
 - `POST /api/ai/analyze-progression-stage` - Analyze pipeline stages with AI insights
+- `POST /api/ai/generate-flow` - Generate complete workflow from natural language description
 - `GET /api/health` - Backend health check
 
 ### Security
