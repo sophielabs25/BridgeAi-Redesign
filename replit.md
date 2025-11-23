@@ -37,7 +37,13 @@ BridgeAI is a Real Estate automation platform that provides workflow builders, p
 ```
 
 ## Recent Changes (November 23, 2025)
-- ✅ **AI Flow Creator**: Chat-based automation workflow generation
+- ✅ **AI Flow Creator**: Professional chat-based automation workflow generation
+  - **Modern UI Design**: Polished interface with gradient backgrounds and smooth animations
+  - **Integration Showcase**: Visual badges displaying available CRMs (Alto, Apex27, Reapit), Portals (Zoopla, Rightmove, OnTheMarket), and Channels (WhatsApp, Email, SMS, Slack)
+  - **Quick Start Examples**: Interactive prompt cards for common automation workflows
+  - **Smart Integration Detection**: Automatically detects and highlights integrations mentioned in user requirements
+  - **Enhanced Chat Messages**: Professional message bubbles with AI assistant branding
+  - **Real-time Feedback**: Loading states with progress indicators
   - Natural language interface where users describe automation needs
   - AI analyzes requirements and generates complete workflow structures
   - Automatic node and edge generation with proper positioning
