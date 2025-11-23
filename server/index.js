@@ -100,6 +100,55 @@ app.post('/api/ai/analyze-progression-stage', async (req, res) => {
   }
 });
 
+app.post('/api/ai/analyze-property', async (req, res) => {
+  try {
+    const { address, price, bedrooms, bathrooms, sqft, description, features, portalStatus, epcRating, media, type } = req.body;
+
+    const missingFields = [];
+    if (!description || description.length < 50) missingFields.push('Detailed description');
+    if (!media?.videoUrl) missingFields.push('Property video tour');
+    if (!media?.floorPlanUrl) missingFields.push('Floor plan');
+    if (!media?.virtualTourUrl && type === 'Sales') missingFields.push('Virtual tour');
+    if ((!portalStatus?.rightmove && !portalStatus?.zoopla) || !portalStatus?.website) missingFields.push('Portal coverage');
+    if (!features || features.length < 3) missingFields.push('More feature highlights');
+    if (!epcRating || epcRating === 'E' || epcRating === 'F') missingFields.push('Energy efficiency improvements');
+
+    const prompt = `You are a Real Estate marketing expert. Analyze this property listing and provide specific, actionable improvements:
+
+Property Details:
+- Address: ${address}
+- Price: ${price}
+- Type: ${type}
+- Bedrooms: ${bedrooms}, Bathrooms: ${bathrooms}, Size: ${sqft} sqft
+- EPC Rating: ${epcRating}
+- Current Features: ${features?.join(', ') || 'Not specified'}
+- Description Quality: ${description ? 'Provided' : 'Missing'}
+- Has Video: ${media?.videoUrl ? 'Yes' : 'No'}
+- Has Floor Plan: ${media?.floorPlanUrl ? 'Yes' : 'No'}
+- Portal Coverage: Rightmove: ${portalStatus?.rightmove ? 'Yes' : 'No'}, Zoopla: ${portalStatus?.zoopla ? 'Yes' : 'No'}, Website: ${portalStatus?.website ? 'Yes' : 'No'}
+- Missing Fields: ${missingFields.join(', ') || 'All key fields present'}
+
+Provide recommendations in JSON format:
+{
+  "missingFields": [{"field": "name", "importance": "high|medium|low", "reason": "why this matters"}],
+  "improvements": [{"title": "Improvement title", "description": "Specific action", "impact": "high|medium|low"}],
+  "sellingSummary": "2-3 sentence marketing hook for this property"
+}`;
+
+    const response = await openai.chat.completions.create({
+      model: 'gpt-5',
+      messages: [{ role: 'user', content: prompt }],
+      response_format: { type: "json_object" },
+    });
+    
+    const result = JSON.parse(response.choices[0].message.content || '{"missingFields":[],"improvements":[],"sellingSummary":""}');
+    res.json(result);
+  } catch (error) {
+    console.error('OpenAI API Error:', error);
+    res.status(500).json({ error: 'Failed to analyze property', missingFields: [], improvements: [], sellingSummary: '' });
+  }
+});
+
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Backend server is running' });
 });

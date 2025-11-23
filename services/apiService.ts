@@ -72,3 +72,25 @@ export const analyzeProgressionStage = async (
     return { summary: "Could not generate AI insights.", suggestedActions: [] };
   }
 };
+
+export const analyzePropertyData = async (propertyData: any) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/ai/analyze-property`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(propertyData),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to analyze property');
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('API Error:', error);
+    return { missingFields: [], improvements: [], sellingSummary: '' };
+  }
+};

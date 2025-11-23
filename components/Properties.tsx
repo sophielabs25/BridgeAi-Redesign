@@ -1,9 +1,10 @@
 
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Property, PropertyFeedback, PropertyOffer, InboxConversation } from '../types';
 import { MOCK_PROPERTIES, MOCK_INBOX_CONVERSATIONS, MOCK_PROPERTY_FEEDBACK, MOCK_PROPERTY_OFFERS } from '../constants';
-import { Search, Filter, BedDouble, Bath, Maximize, Plus, MoreHorizontal, Zap, Globe, CheckCircle, AlertCircle, ArrowLeft, MessageSquare, Share2, Edit, Users, TrendingUp, Star, Clock, Calendar, Mail, Phone, MapPin, Video, FileText, Layers, Sun, Map as MapIcon, Key, X, Bot, Send } from 'lucide-react';
+import { Search, Filter, BedDouble, Bath, Maximize, Plus, MoreHorizontal, Zap, Globe, CheckCircle, AlertCircle, ArrowLeft, MessageSquare, Share2, Edit, Users, TrendingUp, Star, Clock, Calendar, Mail, Phone, MapPin, Video, FileText, Layers, Sun, Map as MapIcon, Key, X, Bot, Send, Lightbulb, Loader, AlertTriangle } from 'lucide-react';
+import { analyzePropertyData } from '../services/apiService';
 
 // Helper Components for Icons
 const RightmoveLogo = ({ className }: { className?: string }) => (
@@ -30,13 +31,44 @@ const getStatusColor = (status: string) => {
 };
 
 const PropertyDetailsView: React.FC<{ property: Property; onBack: () => void }> = ({ property, onBack }) => {
-    const [activeTab, setActiveTab] = useState<'Overview' | 'Enquiries' | 'Offers' | 'Feedback'>('Overview');
+    const [activeTab, setActiveTab] = useState<'Overview' | 'Enquiries' | 'Offers' | 'Feedback' | 'AI Suggestions'>('Overview');
     
     // Sub-tabs for the "Overview" section (Content Management)
     const [subTab, setSubTab] = useState<'Overview' | 'Description' | 'Additional Details' | 'Features' | 'Attachments' | 'Floor Plans' | 'Video' | 'Virtual Tour' | 'Map' | 'Energy Performance' | 'Schedule A Tour'>('Overview');
     
     // State for Conversation Modal
     const [activeConversation, setActiveConversation] = useState<InboxConversation | null>(null);
+
+    // AI Suggestions State
+    const [aiSuggestions, setAiSuggestions] = useState<any>(null);
+    const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+    const [suggestionsLoaded, setSuggestionsLoaded] = useState(false);
+
+    useEffect(() => {
+      if (activeTab === 'AI Suggestions' && !suggestionsLoaded) {
+        loadAISuggestions();
+      }
+    }, [activeTab, suggestionsLoaded]);
+
+    const loadAISuggestions = async () => {
+      setLoadingSuggestions(true);
+      const result = await analyzePropertyData({
+        address: property.address,
+        price: property.price,
+        bedrooms: property.bedrooms,
+        bathrooms: property.bathrooms,
+        sqft: property.sqft,
+        description: property.description,
+        features: property.features,
+        portalStatus: property.portalStatus,
+        epcRating: property.epcRating,
+        media: property.media,
+        type: property.type
+      });
+      setAiSuggestions(result);
+      setLoadingSuggestions(false);
+      setSuggestionsLoaded(true);
+    };
 
     const linkedEnquiries = MOCK_INBOX_CONVERSATIONS.filter(c => 
         c.lead.properties.some(p => p.id === property.id)
@@ -97,16 +129,17 @@ const PropertyDetailsView: React.FC<{ property: Property; onBack: () => void }> 
 
                 {/* Main Activity Tabs */}
                 <div className="flex items-center gap-6 mt-8 border-b border-slate-100">
-                    {['Overview', 'Enquiries', 'Offers', 'Feedback'].map(tab => (
+                    {['Overview', 'Enquiries', 'Offers', 'Feedback', 'AI Suggestions'].map(tab => (
                         <button
                             key={tab}
                             onClick={() => setActiveTab(tab as any)}
-                            className={`pb-4 text-sm font-bold transition-all border-b-2 px-1
+                            className={`pb-4 text-sm font-bold transition-all border-b-2 px-1 flex items-center gap-2
                                 ${activeTab === tab 
                                     ? 'text-cyan-700 border-cyan-500' 
                                     : 'text-slate-500 border-transparent hover:text-slate-700 hover:border-slate-300'}
                             `}
                         >
+                            {tab === 'AI Suggestions' && <Lightbulb className="w-4 h-4" />}
                             {tab}
                             {tab === 'Enquiries' && linkedEnquiries.length > 0 && <span className="ml-2 bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded-full text-[10px]">{linkedEnquiries.length}</span>}
                             {tab === 'Offers' && linkedOffers.length > 0 && <span className="ml-2 bg-amber-100 text-amber-600 px-1.5 py-0.5 rounded-full text-[10px]">{linkedOffers.length}</span>}
@@ -537,6 +570,91 @@ const PropertyDetailsView: React.FC<{ property: Property; onBack: () => void }> 
                              ))
                          )}
                      </div>
+                )}
+
+                {activeTab === 'AI Suggestions' && (
+                    <div className="space-y-6">
+                        {loadingSuggestions ? (
+                            <div className="text-center py-12 bg-white rounded-xl border border-slate-200 flex flex-col items-center gap-3">
+                                <Loader className="w-8 h-8 text-cyan-500 animate-spin" />
+                                <p className="text-slate-600 font-medium">Analyzing property for improvements...</p>
+                            </div>
+                        ) : aiSuggestions ? (
+                            <>
+                                {/* Marketing Hook */}
+                                {aiSuggestions.sellingSummary && (
+                                    <div className="bg-gradient-to-r from-cyan-50 to-blue-50 p-6 rounded-xl border border-cyan-200">
+                                        <div className="flex items-start gap-3">
+                                            <Lightbulb className="w-5 h-5 text-cyan-600 shrink-0 mt-0.5" />
+                                            <div>
+                                                <h3 className="font-bold text-slate-900 mb-2">AI Marketing Hook</h3>
+                                                <p className="text-slate-700 text-sm leading-relaxed">{aiSuggestions.sellingSummary}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Missing Fields */}
+                                {aiSuggestions.missingFields && aiSuggestions.missingFields.length > 0 && (
+                                    <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                                        <div className="flex items-center gap-2 mb-4">
+                                            <AlertTriangle className="w-5 h-5 text-amber-600" />
+                                            <h3 className="font-bold text-slate-900 text-lg">Missing Information</h3>
+                                        </div>
+                                        <div className="space-y-3">
+                                            {aiSuggestions.missingFields.map((field: any, idx: number) => (
+                                                <div key={idx} className="flex items-start gap-3 p-3 bg-amber-50 rounded-lg border border-amber-100">
+                                                    <div className={`text-[10px] font-bold px-2 py-1 rounded whitespace-nowrap
+                                                        ${field.importance === 'high' ? 'bg-rose-100 text-rose-700' :
+                                                          field.importance === 'medium' ? 'bg-amber-100 text-amber-700' :
+                                                          'bg-blue-100 text-blue-700'}
+                                                    `}>
+                                                        {field.importance?.toUpperCase() || 'INFO'}
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <div className="font-semibold text-slate-900 text-sm">{field.field}</div>
+                                                        <p className="text-slate-600 text-xs mt-1">{field.reason}</p>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Improvement Suggestions */}
+                                {aiSuggestions.improvements && aiSuggestions.improvements.length > 0 && (
+                                    <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                                        <div className="flex items-center gap-2 mb-4">
+                                            <Zap className="w-5 h-5 text-cyan-600" />
+                                            <h3 className="font-bold text-slate-900 text-lg">Recommended Improvements</h3>
+                                        </div>
+                                        <div className="space-y-3">
+                                            {aiSuggestions.improvements.map((improvement: any, idx: number) => (
+                                                <div key={idx} className="p-4 bg-slate-50 rounded-lg border border-slate-200 hover:border-cyan-300 hover:bg-cyan-50/50 transition-colors cursor-pointer group">
+                                                    <div className="flex items-start justify-between mb-2">
+                                                        <h4 className="font-bold text-slate-900 text-sm group-hover:text-cyan-700">{improvement.title}</h4>
+                                                        <span className={`text-[10px] font-bold px-2 py-1 rounded whitespace-nowrap
+                                                            ${improvement.impact === 'high' ? 'bg-emerald-100 text-emerald-700' :
+                                                              improvement.impact === 'medium' ? 'bg-blue-100 text-blue-700' :
+                                                              'bg-slate-100 text-slate-700'}
+                                                        `}>
+                                                            {improvement.impact?.toUpperCase() || 'MEDIUM'} IMPACT
+                                                        </span>
+                                                    </div>
+                                                    <p className="text-slate-600 text-sm">{improvement.description}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </>
+                        ) : (
+                            <div className="text-center py-12 bg-white rounded-xl border border-dashed border-slate-200">
+                                <AlertCircle className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                                <p className="text-slate-500 font-medium">Could not generate suggestions. Please try again.</p>
+                            </div>
+                        )}
+                    </div>
                 )}
             </div>
             
