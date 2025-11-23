@@ -232,8 +232,7 @@ Generate exactly 8-12 improvements that are specific to this property type, loca
           content: prompt
         }
       ],
-      response_format: { type: "json_object" },
-      temperature: 0.3, // Lower temperature for more consistent results
+      response_format: { type: "json_object" }
     });
     
     const result = JSON.parse(response.choices[0].message.content || '{"missingFields":[],"improvements":[],"sellingSummary":""}');

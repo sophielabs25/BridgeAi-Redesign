@@ -36,10 +36,18 @@ BridgeAI is a Real Estate automation platform that provides workflow builders, p
 ```
 
 ## Recent Changes (November 23, 2025)
+- ✅ **Consistent AI Suggestions (Top 10-15 per Property)**: Deterministic suggestion system
+  - Backend generates 8-12 comprehensive suggestions per property
+  - Intelligent caching mechanism using property address + postcode + price + type
+  - Same suggestions display every time for the same property (no randomness)
+  - Extended property fields: furnishing, availableFrom, commute information
+  - Overview tab displays all new property fields with "Not specified" fallbacks
+  - Additional Details tab shows comprehensive property information including commute modes
+  - Fixed: Removed unsupported temperature parameter for GPT-5 model compatibility
 - ✅ **AI Suggestions Accept/Decline Functionality**: Interactive suggestion management
   - Accept/Decline buttons for AI marketing hook suggestions
   - Individual Accept/Decline buttons for each missing field
-  - Automatic property updates when accepting suggestions
+  - Automatic property updates when accepting suggestions (furnishing, availableFrom, commute, etc.)
   - Visual feedback with success messages for accepted items
   - Declined suggestions automatically hidden from view
   - Property changes reflected immediately across all tabs
