@@ -339,14 +339,14 @@ const PropertyDetailsView: React.FC<{ property: Property; onBack: () => void; on
         } else if (suggestionType === 'missingField' && data?.field) {
             const fieldName = data.field.toLowerCase();
             
-            if (fieldName.includes('video')) {
+            if (fieldName.includes('video') && !fieldName.includes('3d') && !fieldName.includes('virtual')) {
                 updatedProperty.media = { ...updatedProperty.media, videoUrl: 'pending' };
                 wasUpdated = true;
             } else if (fieldName.includes('floor plan') || fieldName.includes('floorplan')) {
                 updatedProperty.media = { ...updatedProperty.media, floorPlanUrl: 'pending' };
                 wasUpdated = true;
-            } else if (fieldName.includes('virtual tour')) {
-                updatedProperty.media = { ...updatedProperty.media, virtualTourUrl: 'pending' };
+            } else if (fieldName.includes('virtual') && (fieldName.includes('tour') || fieldName.includes('3d'))) {
+                updatedProperty.media = { ...updatedProperty.media, virtual3DTourUrl: 'pending' };
                 wasUpdated = true;
             } else if (fieldName.includes('description') && aiSuggestions?.sellingSummary) {
                 updatedProperty.description = aiSuggestions.sellingSummary;
@@ -356,6 +356,29 @@ const PropertyDetailsView: React.FC<{ property: Property; onBack: () => void; on
                 wasUpdated = true;
             } else if (fieldName.includes('epc') || fieldName.includes('energy')) {
                 updatedProperty.epcRating = 'Pending';
+                wasUpdated = true;
+            } else if (fieldName.includes('furnish')) {
+                updatedProperty.additionalDetails = { 
+                    ...updatedProperty.additionalDetails, 
+                    furnishing: 'To be confirmed' 
+                };
+                wasUpdated = true;
+            } else if (fieldName.includes('available') && (fieldName.includes('from') || fieldName.includes('date') || fieldName.includes('move'))) {
+                updatedProperty.additionalDetails = { 
+                    ...updatedProperty.additionalDetails, 
+                    availableFrom: 'To be confirmed' 
+                };
+                wasUpdated = true;
+            } else if (fieldName.includes('commute') || fieldName.includes('transport') || fieldName.includes('station')) {
+                updatedProperty.commute = {
+                    station: 'To be confirmed',
+                    duration: 'To be confirmed',
+                    modes: []
+                };
+                wasUpdated = true;
+            } else if (fieldName.includes('amenity') || fieldName.includes('amenities') || fieldName.includes('building')) {
+                // Add as additional note or feature
+                updatedProperty.features = [...updatedProperty.features, data.field + ' - To be confirmed'];
                 wasUpdated = true;
             }
         }
