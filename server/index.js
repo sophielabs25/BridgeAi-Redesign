@@ -315,6 +315,62 @@ Create 4-8 nodes in a logical horizontal flow. Space nodes 350px apart horizonta
   }
 });
 
+app.post('/api/ai/chat', async (req, res) => {
+  try {
+    const { messages, leadContext } = req.body;
+
+    // Build conversation history for OpenAI
+    const conversationHistory = messages.map(msg => {
+      let role = 'user';
+      if (msg.sender === 'agent') role = 'assistant';
+      if (msg.sender === 'ai') role = 'assistant';
+      if (msg.sender === 'system') return null; // Skip system messages
+      
+      return {
+        role,
+        content: msg.text
+      };
+    }).filter(Boolean);
+
+    // System prompt with lead context
+    const systemPrompt = `You are an AI assistant for a real estate agency helping agents communicate with leads. 
+
+Context about this lead:
+- Name: ${leadContext?.name || 'Unknown'}
+- Email: ${leadContext?.email || 'Not provided'}
+- Status: ${leadContext?.status || 'New'}
+- Budget: ${leadContext?.budget || 'Not specified'}
+- Move Date: ${leadContext?.moveDate || 'Not specified'}
+${leadContext?.properties?.length > 0 ? `- Interested Properties: ${leadContext.properties.map(p => p.address).join(', ')}` : ''}
+
+Your role:
+- Answer questions about properties, availability, and the rental/sales process
+- Be helpful, professional, and friendly
+- Provide accurate information about UK property regulations when relevant
+- Suggest next steps (viewings, document preparation, etc.)
+- Keep responses concise (2-3 sentences max unless asked for details)
+
+Respond naturally to the latest message in the conversation.`;
+
+    const response = await openai.chat.completions.create({
+      model: 'gpt-5',
+      messages: [
+        {
+          role: 'system',
+          content: systemPrompt
+        },
+        ...conversationHistory
+      ],
+    });
+
+    const aiResponse = response.choices[0].message.content || "I apologize, I couldn't generate a response at this time.";
+    res.json({ response: aiResponse });
+  } catch (error) {
+    console.error('OpenAI API Error:', error);
+    res.status(500).json({ error: 'Failed to get AI response', response: 'Sorry, I encountered an error. Please try again.' });
+  }
+});
+
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Backend server is running' });
 });
