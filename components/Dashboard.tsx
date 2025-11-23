@@ -7,11 +7,12 @@ import { Plus, MessageSquare, Zap, MoreHorizontal, Search, ArrowRight, Layout, F
 interface DashboardProps {
   category: WorkflowCategory;
   onCreateNew: () => void;
+  onBrowseTemplates: () => void;
   onSelectTemplate?: (template: Template) => void;
   onCategoryChange: (category: WorkflowCategory) => void;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ category, onCreateNew, onSelectTemplate, onCategoryChange }) => {
+const Dashboard: React.FC<DashboardProps> = ({ category, onCreateNew, onBrowseTemplates, onSelectTemplate, onCategoryChange }) => {
   // Filter templates: Use specific category templates, fallback to recommended, take only first 4 for display
   const allTemplates = CATEGORY_TEMPLATES[category] || RECOMMENDED_TEMPLATES;
   const displayTemplates = allTemplates.slice(0, 4);
@@ -160,7 +161,7 @@ const Dashboard: React.FC<DashboardProps> = ({ category, onCreateNew, onSelectTe
                 <div className="flex items-center justify-between mb-6">
                     <h2 className="text-lg font-bold text-slate-900">Recommended templates for {category}</h2>
                     <button 
-                    onClick={onCreateNew} 
+                    onClick={onBrowseTemplates} 
                     className="text-sm font-bold text-[#a855f7] hover:text-[#9333ea] transition-colors"
                     >
                     Browse all templates

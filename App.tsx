@@ -239,6 +239,7 @@ const App: React.FC = () => {
           <Dashboard 
             category={activeCategory} 
             onCreateNew={() => setViewState(ViewState.AI_FLOW_CREATOR)}
+            onBrowseTemplates={() => setViewState(ViewState.TEMPLATE_GALLERY)}
             onSelectTemplate={handleTemplateSelect}
             onCategoryChange={handleWorkflowCategorySelect}
           />
