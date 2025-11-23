@@ -993,6 +993,7 @@ const Properties: React.FC = () => {
   const [filterType, setFilterType] = useState<'All' | 'Sales' | 'Lettings'>('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
 
   const filteredProperties = properties.filter(p => {
     const matchType = filterType === 'All' || p.type === filterType;
@@ -1000,8 +1001,26 @@ const Properties: React.FC = () => {
     return matchType && matchSearch;
   });
 
+  const handleSaveProperty = (updatedProperty: Property) => {
+    setProperties(properties.map(p => p.id === updatedProperty.id ? updatedProperty : p));
+    setSelectedProperty(updatedProperty);
+    setIsEditMode(false);
+  };
+
+  const handleEditProperty = () => {
+    setIsEditMode(true);
+  };
+
+  const handleBackToDetails = () => {
+    setIsEditMode(false);
+  };
+
+  if (selectedProperty && isEditMode) {
+      return <PropertyEditView property={selectedProperty} onBack={handleBackToDetails} onSave={handleSaveProperty} />;
+  }
+
   if (selectedProperty) {
-      return <PropertyDetailsView property={selectedProperty} onBack={() => setSelectedProperty(null)} />;
+      return <PropertyDetailsView property={selectedProperty} onBack={() => setSelectedProperty(null)} onEdit={handleEditProperty} />;
   }
 
   return (

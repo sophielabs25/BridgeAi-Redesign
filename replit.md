@@ -36,6 +36,18 @@ BridgeAI is a Real Estate automation platform that provides workflow builders, p
 ```
 
 ## Recent Changes (November 23, 2025)
+- ✅ **Property Edit Page with AI Auto-Fill**: Complete edit functionality
+  - Click Edit button on property details to open edit page
+  - AI automatically analyzes property and suggests improvements
+  - "Apply AI" button to auto-fill description with AI-generated marketing hook
+  - Edit all fields: address, price, bedrooms, bathrooms, features, EPC rating, etc.
+  - Add/remove features dynamically
+  - Portal status checkboxes (Rightmove, Zoopla, Website)
+  - Save changes updates property data and returns to details view
+- ✅ **AI Suggestions Tab**: Property analysis with recommendations
+  - Missing information detection (videos, floor plans, descriptions, etc.)
+  - Impact-rated improvement suggestions (high/medium/low)
+  - AI-generated marketing hooks for property listings
 - ✅ **Sidebar Toggle Feature**: Collapsible sidebar with smooth animations
   - Close button in sidebar header pushes content to the right
   - Open button appears in header when sidebar is closed
