@@ -225,23 +225,14 @@ const App: React.FC = () => {
 
   return (
     <div className="flex h-full w-full font-sans text-slate-900">
-      {/* Mobile Overlay */}
-      {isSidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-30 md:hidden"
-          onClick={() => setIsSidebarOpen(false)}
-          aria-hidden="true"
-        />
-      )}
-      
       {/* Sidebar */}
       <aside className={`
-        fixed inset-y-0 left-0 z-40 w-[260px] bg-white/80 backdrop-blur-xl border-r border-slate-200/60 transform transition-transform duration-300 ease-in-out flex flex-col
-        ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+        bg-white/80 backdrop-blur-xl border-r border-slate-200/60 transition-all duration-300 ease-in-out flex flex-col
+        ${isSidebarOpen ? 'w-[260px]' : 'w-0'}
       `}>
         {/* Brand */}
-        <div className="h-18 flex items-center justify-between px-6 pt-6 pb-2">
-          <div className="flex items-center gap-3 group cursor-pointer">
+        <div className={`h-18 flex items-center justify-between px-6 pt-6 pb-2 transition-opacity duration-300 ${isSidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+          <div className="flex items-center gap-3 group cursor-pointer whitespace-nowrap">
              <div className="w-9 h-9 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-cyan-500/30 shrink-0 transform group-hover:scale-105 transition-transform">
                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
                  <path d="M7 5h8a4 4 0 0 1 0 8H7V5z" />
@@ -265,7 +256,7 @@ const App: React.FC = () => {
         </div>
 
         {/* Main Nav */}
-        <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-1 custom-scrollbar">
+        <nav className={`flex-1 overflow-y-auto px-4 py-6 space-y-1 custom-scrollbar transition-opacity duration-300 ${isSidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
           {NAVIGATION_ITEMS.map((item) => {
              const isActive = (item.name === 'Chats' && viewState === ViewState.CHATS) || 
                               (item.name === 'Automations' && (viewState === ViewState.DASHBOARD || viewState === ViewState.FLOW_BUILDER || viewState === ViewState.TEMPLATE_GALLERY || viewState === ViewState.TEMPLATE_PREVIEW)) ||
@@ -302,8 +293,8 @@ const App: React.FC = () => {
         </nav>
         
         {/* User Profile */}
-        <div className="p-4 border-t border-slate-100">
-           <div className="glass-panel rounded-xl p-3 flex items-center gap-3 cursor-pointer hover:bg-white/80 transition-colors">
+        <div className={`p-4 border-t border-slate-100 transition-opacity duration-300 ${isSidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+           <div className="glass-panel rounded-xl p-3 flex items-center gap-3 cursor-pointer hover:bg-white/80 transition-colors whitespace-nowrap">
              <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-slate-200 to-slate-300 border-2 border-white flex items-center justify-center text-xs font-bold text-slate-600">
                JD
              </div>

@@ -36,6 +36,14 @@ BridgeAI is a Real Estate automation platform that provides workflow builders, p
 ```
 
 ## Recent Changes (November 23, 2025)
+- ✅ **Sidebar Toggle Feature**: Collapsible sidebar with smooth animations
+  - Close button in sidebar header pushes content to the right
+  - Open button appears in header when sidebar is closed
+  - Smooth width transition (260px → 0px)
+- ✅ **Secure Backend Architecture**: Migrated AI calls to Express backend
+  - Backend server on port 3001 handles all OpenAI API calls
+  - Vite proxy routes /api/* requests to backend
+  - API key stored securely server-side only
 - ✅ Migrated from Gemini AI to OpenAI (GPT-5)
 - ✅ Configured for Replit environment (port 5000, HMR over WSS)
 - ✅ Added OpenAI integration for AI-powered workflow insights
