@@ -535,6 +535,53 @@ const PropertyDetailsView: React.FC<{ property: Property; onBack: () => void; on
                                             <p className="text-slate-600 text-sm leading-relaxed line-clamp-4">{property.description}</p>
                                             <button onClick={() => setSubTab('Description')} className="mt-2 text-cyan-600 text-xs font-bold hover:underline">Read more</button>
                                         </div>
+
+                                        {/* Property Details */}
+                                        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                                            <h3 className="font-bold text-slate-900 text-sm mb-4">Property Details</h3>
+                                            <div className="space-y-3">
+                                                {property.type === 'Lettings' && (
+                                                    <>
+                                                        <div className="flex justify-between items-center text-sm">
+                                                            <span className="text-slate-500">Furnishing</span>
+                                                            <span className="text-slate-900 font-medium">{property.additionalDetails?.furnishing || 'Not specified'}</span>
+                                                        </div>
+                                                        <div className="flex justify-between items-center text-sm">
+                                                            <span className="text-slate-500">Available From</span>
+                                                            <span className="text-slate-900 font-medium">{property.additionalDetails?.availableFrom || 'Not specified'}</span>
+                                                        </div>
+                                                    </>
+                                                )}
+                                                <div className="flex justify-between items-center text-sm">
+                                                    <span className="text-slate-500">Council Tax</span>
+                                                    <span className="text-slate-900 font-medium">{property.additionalDetails?.councilTax || 'Not specified'}</span>
+                                                </div>
+                                                <div className="flex justify-between items-center text-sm">
+                                                    <span className="text-slate-500">Tenure</span>
+                                                    <span className="text-slate-900 font-medium">{property.additionalDetails?.tenure || 'Not specified'}</span>
+                                                </div>
+                                                <div className="flex justify-between items-center text-sm">
+                                                    <span className="text-slate-500">Commute</span>
+                                                    <span className="text-slate-900 font-medium">
+                                                        {property.commute?.station && property.commute?.duration ? 
+                                                            `${property.commute.duration} to ${property.commute.station}${property.commute.modes?.length > 0 ? ` (${property.commute.modes.join(', ')})` : ''}` : 
+                                                            'Not specified'}
+                                                    </span>
+                                                </div>
+                                                <div className="flex justify-between items-center text-sm">
+                                                    <span className="text-slate-500">EPC Rating</span>
+                                                    <span className={`px-2 py-0.5 rounded font-bold text-xs text-white
+                                                        ${property.epcRating === 'A' ? 'bg-emerald-600' : 
+                                                          property.epcRating === 'B' ? 'bg-emerald-500' : 
+                                                          property.epcRating === 'C' ? 'bg-emerald-400' : 
+                                                          property.epcRating === 'D' ? 'bg-yellow-500' : 'bg-orange-500'}
+                                                    `}>
+                                                        {property.epcRating}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <button onClick={() => setSubTab('Additional Details')} className="mt-4 text-cyan-600 text-xs font-bold hover:underline">View all details</button>
+                                        </div>
                                     </div>
                                     
                                     {/* Right Sidebar */}
@@ -587,19 +634,32 @@ const PropertyDetailsView: React.FC<{ property: Property; onBack: () => void; on
                                             )}
                                             <tr className="hover:bg-slate-50">
                                                 <td className="px-6 py-4 font-medium text-slate-900 w-1/3">Council Tax</td>
-                                                <td className="px-6 py-4 text-slate-600">{property.additionalDetails?.councilTax}</td>
+                                                <td className="px-6 py-4 text-slate-600">{property.additionalDetails?.councilTax || 'Not specified'}</td>
                                             </tr>
                                             <tr className="hover:bg-slate-50">
                                                 <td className="px-6 py-4 font-medium text-slate-900">Deposit</td>
-                                                <td className="px-6 py-4 text-slate-600">{property.additionalDetails?.deposit}</td>
+                                                <td className="px-6 py-4 text-slate-600">{property.additionalDetails?.deposit || 'Not specified'}</td>
                                             </tr>
                                             <tr className="hover:bg-slate-50">
                                                 <td className="px-6 py-4 font-medium text-slate-900">Tenure</td>
-                                                <td className="px-6 py-4 text-slate-600">{property.additionalDetails?.tenure}</td>
+                                                <td className="px-6 py-4 text-slate-600">{property.additionalDetails?.tenure || 'Not specified'}</td>
                                             </tr>
                                             <tr className="hover:bg-slate-50">
                                                 <td className="px-6 py-4 font-medium text-slate-900">Availability</td>
-                                                <td className="px-6 py-4 text-slate-600">{property.additionalDetails?.availability}</td>
+                                                <td className="px-6 py-4 text-slate-600">{property.additionalDetails?.availability || 'Not specified'}</td>
+                                            </tr>
+                                            <tr className="hover:bg-slate-50">
+                                                <td className="px-6 py-4 font-medium text-slate-900">Commute Information</td>
+                                                <td className="px-6 py-4 text-slate-600">
+                                                    {property.commute?.station && property.commute?.duration ? (
+                                                        <div>
+                                                            <div>{property.commute.duration} to {property.commute.station}</div>
+                                                            {property.commute.modes && property.commute.modes.length > 0 && (
+                                                                <div className="text-xs text-slate-500 mt-1">Via: {property.commute.modes.join(', ')}</div>
+                                                            )}
+                                                        </div>
+                                                    ) : 'Not specified'}
+                                                </td>
                                             </tr>
                                             <tr className="hover:bg-slate-50">
                                                 <td className="px-6 py-4 font-medium text-slate-900">EPC Rating</td>
@@ -614,16 +674,6 @@ const PropertyDetailsView: React.FC<{ property: Property; onBack: () => void; on
                                                     </span>
                                                 </td>
                                             </tr>
-                                            {property.commute && (
-                                                <tr className="hover:bg-slate-50">
-                                                    <td className="px-6 py-4 font-medium text-slate-900">Commute</td>
-                                                    <td className="px-6 py-4 text-slate-600">
-                                                        {property.commute.station && property.commute.duration ? 
-                                                            `${property.commute.duration} to ${property.commute.station}` : 
-                                                            'Not specified'}
-                                                    </td>
-                                                </tr>
-                                            )}
                                         </tbody>
                                     </table>
                                 </div>
