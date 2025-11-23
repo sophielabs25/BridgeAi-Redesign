@@ -1,8 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
-import { InboxConversation, LeadSource, ChatCategory } from '../types';
+import { InboxConversation, LeadSource, ChatCategory, LeadWorkflow } from '../types';
 import { MOCK_INBOX_CONVERSATIONS, CHAT_CATEGORIES } from '../constants';
 import { Search, Filter, Phone, Mail, MessageCircle, Home, Globe, Send, Bot, MoreHorizontal, CheckCircle, BedDouble, X, Smartphone, MessageSquare, UserPlus, Flag, AlertCircle, Check, TrendingUp, Award, ShieldCheck, Wrench, ClipboardCheck, Megaphone, Inbox as InboxIcon } from 'lucide-react';
+import { WorkflowTracker } from './WorkflowTracker';
 
 // --- Brand Icons (Simulated Logos) ---
 
@@ -114,6 +115,7 @@ const Inbox: React.FC = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [messageInput, setMessageInput] = useState('');
   const [isAiTyping, setIsAiTyping] = useState(false);
+  const [rightPanelTab, setRightPanelTab] = useState<'details' | 'workflow'>('workflow');
   
   // Multi-selection filter state
   const [filters, setFilters] = useState<FilterState>({
@@ -123,6 +125,28 @@ const Inbox: React.FC = () => {
   });
 
   const activeFilterCount = filters.source.length + filters.channel.length + filters.crm.length;
+
+  // Handle workflow updates
+  const handleWorkflowUpdate = (workflow: LeadWorkflow) => {
+    if (!selectedId) return;
+
+    setConversations(prevConversations => {
+      const updated = prevConversations.map(conv =>
+        conv.id === selectedId
+          ? { ...conv, workflow }
+          : conv
+      );
+      
+      // Store in localStorage for persistence
+      try {
+        localStorage.setItem('inbox_conversations', JSON.stringify(updated));
+      } catch (e) {
+        console.error('Failed to save conversations to localStorage:', e);
+      }
+      
+      return updated;
+    });
+  };
 
   // Send message and get AI response
   const handleSendMessage = async () => {
@@ -683,10 +707,46 @@ const Inbox: React.FC = () => {
 
       {/* PANE 3: Context Hub (Redesigned) */}
       {selectedConversation && (
-        <div className="w-[340px] border-l border-slate-200 bg-white flex flex-col overflow-y-auto custom-scrollbar">
+        <div className="w-[380px] border-l border-slate-200 bg-white flex flex-col">
           
-          {/* Lead Profile Compact */}
-          <div className="p-6 border-b border-slate-100 bg-slate-50/30">
+          {/* Tabs */}
+          <div className="flex border-b border-slate-200 bg-white">
+            <button
+              onClick={() => setRightPanelTab('workflow')}
+              className={`flex-1 px-4 py-3 text-xs font-bold uppercase tracking-wider transition-colors ${
+                rightPanelTab === 'workflow'
+                  ? 'text-cyan-600 border-b-2 border-cyan-600 bg-cyan-50/30'
+                  : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
+              }`}
+            >
+              Workflow
+            </button>
+            <button
+              onClick={() => setRightPanelTab('details')}
+              className={`flex-1 px-4 py-3 text-xs font-bold uppercase tracking-wider transition-colors ${
+                rightPanelTab === 'details'
+                  ? 'text-cyan-600 border-b-2 border-cyan-600 bg-cyan-50/30'
+                  : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
+              }`}
+            >
+              Details
+            </button>
+          </div>
+
+          {/* Workflow Tab Content */}
+          {rightPanelTab === 'workflow' && (
+            <WorkflowTracker
+              workflow={selectedConversation.workflow}
+              onUpdateWorkflow={handleWorkflowUpdate}
+              leadName={selectedConversation.lead.name}
+            />
+          )}
+
+          {/* Details Tab Content */}
+          {rightPanelTab === 'details' && (
+            <div className="flex-1 overflow-y-auto custom-scrollbar">
+              {/* Lead Profile Compact */}
+              <div className="p-6 border-b border-slate-100 bg-slate-50/30">
              <div className="flex items-start gap-3 mb-4">
                 <div className="w-12 h-12 rounded-full bg-white border border-slate-200 shadow-sm flex items-center justify-center text-lg font-bold text-slate-700">
                    {selectedConversation.lead.name.split(' ').map(n => n[0]).join('')}
@@ -776,33 +836,35 @@ const Inbox: React.FC = () => {
              </div>
           </div>
 
-          {/* Integrations */}
-          <div className="p-6">
-             <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Integrations</h4>
-             <div className="space-y-3">
-                <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-lg border border-slate-100">
-                   <div className="flex items-center gap-2">
-                      {getSourceLogo(selectedConversation.source, "w-6 h-6 shadow-sm rounded-md")}
-                      <div className="flex flex-col">
-                         <span className="text-xs font-bold text-slate-700">{selectedConversation.source}</span>
-                         <span className="text-[10px] text-slate-400">Source</span>
-                      </div>
-                   </div>
-                   <CheckCircle className="w-3.5 h-3.5 text-emerald-500" />
-                </div>
-                
-                <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-lg border border-slate-100">
-                   <div className="flex items-center gap-2">
-                      {getCrmLogo(selectedConversation.crm, "w-6 h-6 shadow-sm rounded-md")}
-                      <div className="flex flex-col">
-                         <span className="text-xs font-bold text-slate-700">{selectedConversation.crm}</span>
-                         <span className="text-[10px] text-slate-400">Synced</span>
-                      </div>
-                   </div>
-                   <CheckCircle className="w-3.5 h-3.5 text-emerald-500" />
-                </div>
-             </div>
-          </div>
+              {/* Integrations */}
+              <div className="p-6">
+                 <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Integrations</h4>
+                 <div className="space-y-3">
+                    <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-lg border border-slate-100">
+                       <div className="flex items-center gap-2">
+                          {getSourceLogo(selectedConversation.source, "w-6 h-6 shadow-sm rounded-md")}
+                          <div className="flex flex-col">
+                             <span className="text-xs font-bold text-slate-700">{selectedConversation.source}</span>
+                             <span className="text-[10px] text-slate-400">Source</span>
+                          </div>
+                       </div>
+                       <CheckCircle className="w-3.5 h-3.5 text-emerald-500" />
+                    </div>
+                    
+                    <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-lg border border-slate-100">
+                       <div className="flex items-center gap-2">
+                          {getCrmLogo(selectedConversation.crm, "w-6 h-6 shadow-sm rounded-md")}
+                          <div className="flex flex-col">
+                             <span className="text-xs font-bold text-slate-700">{selectedConversation.crm}</span>
+                             <span className="text-[10px] text-slate-400">Synced</span>
+                          </div>
+                       </div>
+                       <CheckCircle className="w-3.5 h-3.5 text-emerald-500" />
+                    </div>
+                 </div>
+              </div>
+            </div>
+          )}
 
         </div>
       )}
