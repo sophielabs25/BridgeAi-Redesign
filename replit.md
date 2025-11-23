@@ -36,6 +36,15 @@ BridgeAI is a Real Estate automation platform that provides workflow builders, p
 ```
 
 ## Recent Changes (November 23, 2025)
+- ✅ **AI Suggestions Accept/Decline Functionality**: Interactive suggestion management
+  - Accept/Decline buttons for AI marketing hook suggestions
+  - Individual Accept/Decline buttons for each missing field
+  - Automatic property updates when accepting suggestions
+  - Visual feedback with success messages for accepted items
+  - Declined suggestions automatically hidden from view
+  - Property changes reflected immediately across all tabs
+  - Async race condition protection using useRef for multi-property switching
+  - Per-property state isolation (no leakage between properties)
 - ✅ **Property Edit Page with AI Auto-Fill**: Complete edit functionality
   - Click Edit button on property details to open edit page
   - AI automatically analyzes property and suggests improvements
