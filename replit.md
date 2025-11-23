@@ -46,11 +46,18 @@ BridgeAI is a Real Estate automation platform that provides workflow builders, p
   - **Real-time Feedback**: Loading states with progress indicators
   - Natural language interface where users describe automation needs
   - AI analyzes requirements and generates complete workflow structures
+  - **Horizontal Flow Generation**: Flows generated left-to-right (350px spacing) optimized for widescreen displays
   - Automatic node and edge generation with proper positioning
   - Seamless transition from chat to visual FlowBuilder for customization
   - Backend endpoint `/api/ai/generate-flow` powered by GPT-5
   - Support for all node types: trigger, action, condition, ai_process, integration
   - "New Flow" button now launches AI chat interface instead of template gallery
+- ✅ **Flow Builder Integration Icons**: Visual integration branding
+  - Automatic detection of CRMs (Alto, Apex27, Reapit) with branded badges
+  - Portal detection (Zoopla, Rightmove, OnTheMarket) with emoji icons
+  - Channel detection (WhatsApp, Email, SMS, Slack, Gmail) with color-coded badges
+  - Integration badges appear directly on workflow nodes for easy identification
+  - Makes complex automation flows understandable at a glance
 - ✅ **Consistent AI Suggestions (Top 10-15 per Property)**: Deterministic suggestion system
   - Backend generates 8-12 comprehensive suggestions per property
   - Intelligent caching mechanism using property address + postcode + price + type
@@ -118,6 +125,9 @@ The application runs on port 5000 with hot module replacement enabled.
 
 ## Features
 - **Flow Builder**: Visual drag-and-drop workflow builder with AI assistance
+  - **Horizontal Layout**: Optimized for widescreen displays with left-to-right flow progression
+  - **Integration Icons**: Automatic detection and display of CRM, portal, and channel logos on nodes
+  - **Smart Connections**: Bezier curves connecting nodes horizontally with smooth transitions
 - **Pipeline Management**: Track and manage real estate pipelines
 - **Task Management**: Organize and assign tasks
 - **Properties**: Manage property listings
