@@ -347,9 +347,41 @@ const Pipeline: React.FC = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [taskDrawerOpen, setTaskDrawerOpen] = useState(false);
   const [taskDraft, setTaskDraft] = useState<{ title: string; type: string } | null>(null);
+  const [pipelineData, setPipelineData] = useState<Record<string, any[]>>(() => {
+    try {
+      const saved = localStorage.getItem('all_pipelines');
+      if (saved) {
+        return JSON.parse(saved);
+      }
+    } catch (e) {
+      console.error('Failed to load pipeline data:', e);
+    }
+    return GENERATED_PIPELINES_MAP;
+  });
+
+  useEffect(() => {
+    const handleStorageChange = () => {
+      try {
+        const saved = localStorage.getItem('all_pipelines');
+        if (saved) {
+          setPipelineData(JSON.parse(saved));
+        }
+      } catch (e) {
+        console.error('Failed to reload pipeline data:', e);
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    const interval = setInterval(handleStorageChange, 1000);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(interval);
+    };
+  }, []);
 
   // Dynamic pipeline switching based on the map
-  const stages = GENERATED_PIPELINES_MAP[activeSubMenu] || [];
+  const stages = pipelineData[activeSubMenu] || [];
 
   // Mock selection of progression data if available
   const selectedProgression = selectedCardId ? MOCK_PROGRESSION_DATA[selectedCardId] : null;

@@ -183,3 +183,12 @@ MOCK_CHATS_GENERATED.forEach((chat) => {
 
 // EXPORT MAP
 export const ALL_PIPELINES = pipelines;
+
+if (typeof window !== 'undefined' && !localStorage.getItem('all_pipelines')) {
+  try {
+    localStorage.setItem('all_pipelines', JSON.stringify(pipelines));
+    console.log('✅ Initialized pipeline data in localStorage');
+  } catch (e) {
+    console.error('Failed to initialize pipeline data in localStorage:', e);
+  }
+}
