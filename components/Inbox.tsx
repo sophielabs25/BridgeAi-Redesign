@@ -130,6 +130,9 @@ const Inbox: React.FC = () => {
   const handleWorkflowUpdate = (workflow: LeadWorkflow) => {
     if (!selectedId) return;
 
+    const selectedConv = conversations.find(c => c.id === selectedId);
+    if (!selectedConv) return;
+
     setConversations(prevConversations => {
       const updated = prevConversations.map(conv =>
         conv.id === selectedId
@@ -146,6 +149,12 @@ const Inbox: React.FC = () => {
       
       return updated;
     });
+
+    const { syncWorkflowToPipeline, updatePipelineStage } = require('../utils/workflowSync');
+    const pipelineUpdate = syncWorkflowToPipeline(selectedId, workflow, selectedConv.category);
+    if (pipelineUpdate) {
+      updatePipelineStage(pipelineUpdate);
+    }
   };
 
   // Send message and get AI response
