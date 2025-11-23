@@ -13,11 +13,14 @@ export default defineConfig(({ mode }) => {
           host: env.REPLIT_DEV_DOMAIN,
           clientPort: 443,
         },
+        proxy: {
+          '/api': {
+            target: 'http://localhost:3001',
+            changeOrigin: true,
+          },
+        },
       },
       plugins: [react()],
-      define: {
-        'process.env.OPENAI_API_KEY': JSON.stringify(env.OPENAI_API_KEY)
-      },
       resolve: {
         alias: {
           '@': path.resolve(__dirname, '.'),

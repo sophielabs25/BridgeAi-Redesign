@@ -87,4 +87,22 @@ When users click on any stage card in the pipeline:
 4. Offers one-click "Create Task" buttons for each suggested action
 5. Displays deal details and option to view full progression
 
-**Note**: For demo purposes, AI calls run client-side with `dangerouslyAllowBrowser` enabled. For production deployments, move AI functionality to a backend API to protect API keys.
+## Backend Architecture
+The application now uses a secure backend architecture to protect the OpenAI API key:
+
+### Server Setup
+- **Express Backend** (Port 3001): Handles all OpenAI API calls
+- **Vite Frontend** (Port 5000): React application with proxy to backend
+- **Proxy Configuration**: All `/api/*` requests are proxied from frontend to backend
+
+### API Endpoints
+- `POST /api/ai/generate-node-description` - Generate workflow node descriptions
+- `POST /api/ai/analyze-flow-completeness` - Analyze workflow completeness
+- `POST /api/ai/analyze-progression-stage` - Analyze pipeline stages with AI insights
+- `GET /api/health` - Backend health check
+
+### Security
+- ✅ API key stored securely in environment variables (server-side only)
+- ✅ No API key exposure in browser/client code
+- ✅ All AI calls routed through secure backend
+- ✅ CORS configured for development environment

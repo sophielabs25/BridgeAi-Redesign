@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { PIPELINE_MENU, GENERATED_PIPELINES_MAP, MOCK_PROGRESSION_DATA } from '../constants';
 import { ProgressionData, SuggestedAction } from '../types';
 import { Search, Filter, Plus, MoreHorizontal, Globe, Phone, Mail, Calendar, Zap, UserCircle, ArrowLeft, CheckCircle, Clock, FileText, Briefcase, Bot, MessageSquare, Sparkles, ChevronDown, Send, AlignLeft, CheckSquare, Smartphone, Link, Home, X } from 'lucide-react';
-import { analyzeProgressionStage } from '../services/openaiService';
+import { analyzeProgressionStage } from '../services/apiService';
 
 // --- Brand Icons for Source ---
 const RightmoveLogo = ({ className }: { className?: string }) => (

@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { FlowNode, FlowEdge, Position, ToneType, WorkflowCategory } from '../types';
 import { X, GripVertical, Zap, MessageSquare, GitBranch, Bot, Save, Settings, ZoomIn, ZoomOut, MousePointer2, LayoutGrid, Move, Play, Undo, Redo, MoreHorizontal, Database, CheckCircle } from 'lucide-react';
-import { generateNodeDescription } from '../services/openaiService';
+import { generateNodeDescription } from '../services/apiService';
 
 // --- ALTO API DEFINITION ---
 // Based on: https://developers.zoopla.co.uk/reference/get_appraisal-leads
