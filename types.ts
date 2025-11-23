@@ -108,6 +108,48 @@ export interface FlowData {
 // Inbox System
 export type LeadSource = 'Rightmove' | 'Zoopla' | 'Website' | 'Email' | 'Phone' | 'Whatsapp' | 'System';
 
+export enum WorkflowStage {
+  LEAD_CAPTURE = 'lead_capture',
+  QUALIFICATION = 'qualification',
+  BOOKING_FOLLOWUPS = 'booking_followups',
+  PROPERTY_SUGGESTIONS = 'property_suggestions',
+  REFERENCING = 'referencing',
+  NOTIFICATIONS = 'notifications',
+  FEEDBACK_SENTIMENT = 'feedback_sentiment',
+  ONBOARDING = 'onboarding'
+}
+
+export interface StageProgress {
+  stage: WorkflowStage;
+  status: 'pending' | 'in_progress' | 'completed' | 'skipped';
+  completedAt?: string;
+  notes?: string;
+  sentiment?: 'positive' | 'neutral' | 'negative';
+  feedback?: string;
+}
+
+export interface PropertySuggestion {
+  id: string;
+  address: string;
+  price: string;
+  bedrooms: number;
+  bathrooms: number;
+  image: string;
+  status: 'suggested' | 'viewed' | 'interested' | 'rejected';
+  suggestedAt: string;
+  feedback?: string;
+}
+
+export interface Notification {
+  id: string;
+  who: string; // Who to notify (name/role)
+  what: string; // What to notify about
+  when: string; // When to send (timestamp or 'immediate')
+  channel: 'email' | 'sms' | 'whatsapp' | 'in-app';
+  status: 'pending' | 'sent' | 'failed';
+  sentAt?: string;
+}
+
 export interface Message {
   id: string;
   sender: 'user' | 'agent' | 'ai' | 'system';
@@ -135,6 +177,15 @@ export interface LeadProfile {
   properties: PropertyInterest[]; 
 }
 
+export interface LeadWorkflow {
+  currentStage: WorkflowStage;
+  stages: StageProgress[];
+  propertySuggestions: PropertySuggestion[];
+  notifications: Notification[];
+  startedAt: string;
+  completedAt?: string;
+}
+
 export interface InboxConversation {
   id: string;
   source: LeadSource;
@@ -145,6 +196,7 @@ export interface InboxConversation {
   unreadCount: number;
   lastActivity: string;
   tags: string[];
+  workflow?: LeadWorkflow;
 }
 
 // Pipeline System
