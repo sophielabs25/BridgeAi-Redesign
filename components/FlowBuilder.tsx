@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { FlowNode, FlowEdge, Position, ToneType, WorkflowCategory } from '../types';
 import { X, GripVertical, Zap, MessageSquare, GitBranch, Bot, Save, Settings, ZoomIn, ZoomOut, MousePointer2, LayoutGrid, Move, Play, Undo, Redo, MoreHorizontal, Database, CheckCircle } from 'lucide-react';
-import { generateNodeDescription } from '../services/geminiService';
+import { generateNodeDescription } from '../services/openaiService';
 
 // --- ALTO API DEFINITION ---
 // Based on: https://developers.zoopla.co.uk/reference/get_appraisal-leads
@@ -465,7 +465,7 @@ const FlowBuilder: React.FC<FlowBuilderProps> = ({ category, tone, initialNodes 
              {/* AI Assistant */}
              <div className="p-4 rounded-xl bg-gradient-to-br from-cyan-50 to-blue-50 border border-cyan-100">
                 <div className="flex items-center gap-2 mb-2 text-cyan-700 font-bold text-xs uppercase">
-                   <Bot className="w-3.5 h-3.5" /> Gemini Insight
+                   <Bot className="w-3.5 h-3.5" /> AI Insight
                 </div>
                 <div className="min-h-[60px] text-xs text-slate-600 leading-relaxed">
                    {isAnalyzing ? (
